@@ -121,6 +121,8 @@ public class HBaseEntityMapper {
                     throw new RuntimeException(e);
                 }
 
+                //TODO add check that tablename and defaultcolumnfamily are not empty in @HBasePersistance!
+                
                 // figure out which method or field to use as the HBaseRowKey
                 final Set<Field> hBaseRowKeyFields = Whitebox.getFieldsAnnotatedWith(
                         Whitebox.newInstance(annotatedClass), HBaseRowKey.class);
