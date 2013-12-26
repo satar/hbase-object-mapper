@@ -1,5 +1,13 @@
 *.class
 
+#ignore eclipse files
+.classpath
+.project
+.settings
+
+#ignore built files
+target
+
 # Package Files #
 *.jar
 *.war
