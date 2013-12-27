@@ -53,6 +53,7 @@ import org.powermock.reflect.Whitebox;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.integration.transformer.ObjectToMapTransformer;
 import org.springframework.util.ReflectionUtils;
 
 import com.google.common.base.Function;
@@ -81,6 +82,8 @@ import com.mylife.hbase.mapper.util.TypeHandler;
 public class HBaseEntityMapper {
 
     private static final transient Logger LOG = Logger.getLogger(HBaseEntityMapper.class);
+
+    private final ObjectToMapTransformer objectToMapTransformer = new ObjectToMapTransformer();
 
     private final HTablePool hTablePool;
 
@@ -146,12 +149,14 @@ public class HBaseEntityMapper {
 
                 try {
                     if (!hBaseAdmin.tableExists(tableName)) {
-                        LOG.error("table " + tableName + "in @HBasePersistance.tableName() does not exist. Ignoring: "
+                        LOG.error("table " + tableName + " in @HBasePersistance.tableName() does not exist. Ignoring: "
                                 + annotatedClass);
+                        continue;
                     }
                 } catch (IOException e) {
                     LOG.error("Could not verify table " + tableName
                             + "in @HBasePersistance.tableName() exists. Ignoring: " + annotatedClass, e);
+                    continue;
                 }
 
                 final String defaultColumnFamilyName = annotatedClass.getAnnotation(HBasePersistance.class)
@@ -168,11 +173,13 @@ public class HBaseEntityMapper {
                         LOG.error("defaultColumnFamilyName (" + defaultColumnFamilyName + ") in " + tableName
                                 + "in @HBasePersistance.defaultColumnFamilyName() does not exist. Ignoring: "
                                 + annotatedClass);
+                        continue;
                     }
                 } catch (IOException e) {
                     LOG.error("Could not verify defaultColumnFamilyName (" + defaultColumnFamilyName + ") in "
                             + tableName + "in @HBasePersistance.defaultColumnFamilyName() exists. Ignoring: "
                             + annotatedClass, e);
+                    continue;
                 }
 
                 // figure out which method or field to use as the HBaseRowKey
@@ -305,6 +312,10 @@ public class HBaseEntityMapper {
         }
 
         // TODO add support for new @HBaseObjectField
+        for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
+                hBasePersistanceClass).keySet()) {
+
+        }
         return type;
 
     }
@@ -437,6 +448,12 @@ public class HBaseEntityMapper {
             return Bytes.toBytes((String) value);
         } else if (value.getClass().isAssignableFrom(Boolean.class)) {
             return Bytes.toBytes((Boolean) value);
+        } else if (value.getClass().isAssignableFrom(Short.class)) {
+            return Bytes.toBytes((Short) value);
+        } else if (value.getClass().isAssignableFrom(Float.class)) {
+            return Bytes.toBytes((Float) value);
+        } else if (value.getClass().isAssignableFrom(Double.class)) {
+            return Bytes.toBytes((Double) value);
         } else if (value.getClass().isAssignableFrom(byte[].class)) {
             return (byte[]) value;
         } else if (value.getClass().isEnum()) {
