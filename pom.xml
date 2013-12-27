@@ -14,7 +14,7 @@
 	</licenses>
 	<properties>
 		<cdh.version>cdh4.0.1</cdh.version>
-		<powermock.version>1.4.11</powermock.version>
+		<powermock.version>1.5.2</powermock.version>
 		<spring.version>3.2.6.RELEASE</spring.version>
 	</properties>
 	<dependencies>
