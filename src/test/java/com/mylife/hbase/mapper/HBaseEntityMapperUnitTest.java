@@ -20,11 +20,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -33,6 +36,8 @@ import java.util.TreeMap;
 import javax.mail.internet.ContentType;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Result;
@@ -41,11 +46,18 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.api.mockito.mockpolicies.Slf4jMockPolicy;
+import org.powermock.core.classloader.annotations.MockPolicy;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 import org.springframework.integration.transformer.ObjectToMapTransformer;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSortedMap;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.model.TestModel;
@@ -63,41 +75,58 @@ import com.mylife.hbase.mapper.util.TypeHandler;
  * @author Mike E
  */
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore("org.apache.log4j.*")
+@MockPolicy(Slf4jMockPolicy.class)
+@PrepareForTest({ HBaseEntityMapper.class, HBaseAdmin.class })
 public class HBaseEntityMapperUnitTest {
 
-    private final TestModel testModelExpected = new TestModel(1l, "2", false, new byte[] { 3 },
-            (ContentType) Whitebox.getInternalState(TypeHandler.class, "DEFAULT_CONTENT_TYPE"));
-    private final TestModel testModelNullContentTypeExpected = new TestModel(1l, "2", false, new byte[] { 3 }, null);
+    private final TestModel testModelExpected = new TestModel(
+            -1,
+            (short) 0,
+            2.71828182845904523536028747135266249775724709369995,
+            3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346F,
+            4L, "5", false, new byte[] { 6 }, (ContentType) Whitebox.getInternalState(TypeHandler.class,
+                    "DEFAULT_CONTENT_TYPE"));
+    private final TestModel testModelNullContentTypeExpected = new TestModel(
+            -1,
+            (short) 0,
+            2.71828182845904523536028747135266249775724709369995,
+            3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346F,
+            4L, "5", false, new byte[] { 6 }, null);
 
     private final TestModelWithGoodMap testModelWithGoodMapExpected = new TestModelWithGoodMap(1l, "2", false,
             new byte[] { 3 }, ElementType.ANNOTATION_TYPE, ImmutableMap.of("testKey", "testValue", "otherKey",
                     "otherValue"));
 
-    @SuppressWarnings("rawtypes")
-    private final static Map<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected = BUILD_TEST_MAP();
+    private final static Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected = BUILD_TEST_MAP();
 
-    private static Map<Class, ImmutableMap<Field, Method>> BUILD_TEST_MAP() {
+    private static Map<Class<?>, ImmutableMap<Field, Method>> BUILD_TEST_MAP() {
 
-        Map<Class, ImmutableMap<Field, Method>> testMap = new HashMap<Class, ImmutableMap<Field, Method>>();
+        Map<Class<?>, ImmutableMap<Field, Method>> testMap = new HashMap<Class<?>, ImmutableMap<Field, Method>>();
 
+        Builder<Field, Method> builder = ImmutableMap.builder();
+        builder.put(Whitebox.getField(TestModel.class, "longField"),
+                Whitebox.getMethod(TestModel.class, "getLongField"));
+        builder.put(Whitebox.getField(TestModel.class, "stringField"),
+                Whitebox.getMethod(TestModel.class, "getStringField"));
+        builder.put(Whitebox.getField(TestModel.class, "integerField"),
+                Whitebox.getMethod(TestModel.class, "getIntegerField"));
+        builder.put(Whitebox.getField(TestModel.class, "doubleField"),
+                Whitebox.getMethod(TestModel.class, "getDoubleField"));
+        builder.put(Whitebox.getField(TestModel.class, "floatField"),
+                Whitebox.getMethod(TestModel.class, "getFloatField"));
+        builder.put(Whitebox.getField(TestModel.class, "shortField"),
+                Whitebox.getMethod(TestModel.class, "getShortField"));
+        builder.put(Whitebox.getField(TestModel.class, "booleanField"),
+                Whitebox.getMethod(TestModel.class, "getBooleanField"));
+        builder.put(Whitebox.getField(TestModel.class, "byteArrayField"),
+                Whitebox.getMethod(TestModel.class, "getByteArrayField"));
+        builder.put(Whitebox.getField(TestModel.class, "contentTypeField"),
+                Whitebox.getMethod(TestModel.class, "getContentTypeField"));
+
+        testMap.put((Class<?>) TestModel.class, builder.build());
         testMap.put(
-                (Class) TestModel.class,
-                ImmutableMap.of(Whitebox.getField(TestModel.class, "longField"),
-                        Whitebox.getMethod(TestModel.class, "getLongField"),
-
-                        Whitebox.getField(TestModel.class, "stringField"),
-                        Whitebox.getMethod(TestModel.class, "getStringField"),
-
-                        Whitebox.getField(TestModel.class, "booleanField"),
-                        Whitebox.getMethod(TestModel.class, "getBooleanField"),
-
-                        Whitebox.getField(TestModel.class, "byteArrayField"),
-                        Whitebox.getMethod(TestModel.class, "getByteArrayField"),
-
-                        Whitebox.getField(TestModel.class, "contentTypeField"),
-                        Whitebox.getMethod(TestModel.class, "getContentTypeField")));
-        testMap.put(
-                (Class) TestModelWithGoodMap.class,
+                (Class<?>) TestModelWithGoodMap.class,
                 ImmutableMap.of(Whitebox.getField(TestModelWithGoodMap.class, "longField"),
                         Whitebox.getMethod(TestModelWithGoodMap.class, "getLongField"),
 
@@ -113,7 +142,7 @@ public class HBaseEntityMapperUnitTest {
                         Whitebox.getField(TestModelWithGoodMap.class, "elementTypeField"),
                         Whitebox.getMethod(TestModelWithGoodMap.class, "getElementTypeField")));
         testMap.put(
-                (Class) TestModelWithBadMap.class,
+                (Class<?>) TestModelWithBadMap.class,
                 ImmutableMap.of(Whitebox.getField(TestModelWithBadMap.class, "longField"),
                         Whitebox.getMethod(TestModelWithBadMap.class, "getLongField"),
 
@@ -129,7 +158,7 @@ public class HBaseEntityMapperUnitTest {
                         Whitebox.getField(TestModelWithBadMap.class, "contentTypeField"),
                         Whitebox.getMethod(TestModelWithBadMap.class, "getContentTypeField")));
         testMap.put(
-                (Class) TestModelWithDifferentBadMap.class,
+                (Class<?>) TestModelWithDifferentBadMap.class,
                 ImmutableMap.of(Whitebox.getField(TestModelWithDifferentBadMap.class, "longField"),
                         Whitebox.getMethod(TestModelWithDifferentBadMap.class, "getLongField"),
 
@@ -145,7 +174,7 @@ public class HBaseEntityMapperUnitTest {
                         Whitebox.getField(TestModelWithDifferentBadMap.class, "contentTypeField"),
                         Whitebox.getMethod(TestModelWithDifferentBadMap.class, "getContentTypeField")));
         testMap.put(
-                (Class) TestModelWithNoMap.class,
+                (Class<?>) TestModelWithNoMap.class,
                 ImmutableMap.of(Whitebox.getField(TestModelWithNoMap.class, "integerField"),
                         Whitebox.getMethod(TestModelWithNoMap.class, "getIntegerField"),
 
@@ -161,7 +190,7 @@ public class HBaseEntityMapperUnitTest {
                         Whitebox.getField(TestModelWithNoMap.class, "contentTypeField"),
                         Whitebox.getMethod(TestModelWithNoMap.class, "getContentTypeField")));
         testMap.put(
-                (Class) TestModelOnlyFields.class,
+                (Class<?>) TestModelOnlyFields.class,
                 ImmutableMap.of(Whitebox.getField(TestModelOnlyFields.class, "longField"),
                         Whitebox.getMethod(TestModelOnlyFields.class, "getLongField"),
 
@@ -183,6 +212,12 @@ public class HBaseEntityMapperUnitTest {
     HTablePool hTablePool;
 
     @Mock
+    HBaseAdmin hBaseAdmin;
+
+    @Mock
+    HTableDescriptor hTableDescriptor;
+
+    @Mock
     HTableInterface hTableInterface;
 
     @Mock
@@ -194,10 +229,15 @@ public class HBaseEntityMapperUnitTest {
     @Before
     @Test
     public void hBaseEntityMapperConstrutorTest() throws Exception {
-        Whitebox.setInternalState(hTablePool, Configuration.class, new Configuration());
+        final Configuration configuration = new Configuration();
+        Whitebox.setInternalState(hTablePool, Configuration.class, configuration);
+        PowerMockito.whenNew(HBaseAdmin.class).withArguments(configuration).thenReturn(hBaseAdmin);
+        when(hBaseAdmin.tableExists(anyString())).thenReturn(true);
+        when(hBaseAdmin.getTableDescriptor((byte[]) any())).thenReturn(hTableDescriptor);
+        when(hTableDescriptor.hasFamily((byte[]) any())).thenReturn(true);
         this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
         // This setups the state of the entity mapper lets inspect that too make
-        // sure its right.
+        // sure that the internal state of the entity mapper is correct.
         ImmutableMap<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
@@ -205,7 +245,7 @@ public class HBaseEntityMapperUnitTest {
         assertEquals(6, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
                 .get((Class) TestModel.class));
-        assertEquals(5,
+        assertEquals(9,
                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.get((Class) TestModel.class)
                         .size());
         assertEquals(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected,
@@ -274,6 +314,14 @@ public class HBaseEntityMapperUnitTest {
                 testModelExpected.getByteArrayField());
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("contentTypeField"),
                 Bytes.toBytes(testModelExpected.getContentTypeField().toString()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("integerField"),
+                Bytes.toBytes(testModelExpected.getIntegerField()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("floatField"),
+                Bytes.toBytes(testModelExpected.getFloatField()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("shortField"),
+                Bytes.toBytes(testModelExpected.getShortField()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("doubleField"),
+                Bytes.toBytes(testModelExpected.getDoubleField()));
 
         when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
 
@@ -311,6 +359,14 @@ public class HBaseEntityMapperUnitTest {
         columnFamilyResultMap.get(Bytes.toBytes("OTHER_STUFF")).put(Bytes.toBytes("byteArrayField"),
                 testModelNullContentTypeExpected.getByteArrayField());
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("contentTypeField"), null);
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("integerField"),
+                Bytes.toBytes(testModelExpected.getIntegerField()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("floatField"),
+                Bytes.toBytes(testModelExpected.getFloatField()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("shortField"),
+                Bytes.toBytes(testModelExpected.getShortField()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("doubleField"),
+                Bytes.toBytes(testModelExpected.getDoubleField()));
 
         when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
 
