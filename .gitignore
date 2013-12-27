@@ -1,5 +1,8 @@
 *.class
 
+#ignore clover
+.clover
+
 #ignore eclipse files
 .classpath
 .project
