@@ -60,6 +60,12 @@ public final class TypeHandler {
             return (T) Bytes.toString(value);
         } else if (type == Boolean.class) {
             return (T) Boolean.valueOf(Bytes.toBoolean(value));
+        } else if (type == Float.class) {
+            return (T) Float.valueOf(Bytes.toFloat(value));
+        } else if (type == Double.class) {
+            return (T) Double.valueOf(Bytes.toDouble(value));
+        } else if (type == Short.class) {
+            return (T) Short.valueOf(Bytes.toShort(value));
         } else if (type == byte[].class) {
             return (T) value;
         } else if (type.isEnum()) {
