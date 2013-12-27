@@ -27,7 +27,7 @@ import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with some valid types and a good map backing object
+ * A test POJO with some valid types and a bad map backing object
  * 
  * @author
  */

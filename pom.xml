@@ -15,13 +15,13 @@
 	<properties>
 		<cdh.version>cdh4.0.1</cdh.version>
 		<powermock.version>1.4.11</powermock.version>
-		<spring.version>3.2.2.RELEASE</spring.version>
+		<spring.version>3.2.6.RELEASE</spring.version>
 	</properties>
 	<dependencies>
 		<dependency>
 			<groupId>javax.mail</groupId>
 			<artifactId>mail</artifactId>
-			<version>1.4.3.01</version>
+			<version>1.4.3</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -76,6 +76,19 @@
 			<artifactId>spring-context</artifactId>
 			<version>${spring.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.integration</groupId>
+			<artifactId>spring-integration-core</artifactId>
+			<version>3.0.0.RELEASE</version>
+		</dependency>
+		<!-- explicitly declare optional dependency from spring-integration-core -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.2.3</version>
+			<scope>compile</scope>
+			<optional>true</optional>
+		</dependency>
 	</dependencies>
 	<scm>
 		<connection>scm:git:git://github.com/myliferepo/hbase-object-mapper.git</connection>
@@ -91,4 +104,5 @@ You provide the HBase results set and HBase object mapper will turn that into a 
 Give it an annotated pojo and HBase object mapper will save it in HBase.
 
 Simple.</description>
+
 </project>

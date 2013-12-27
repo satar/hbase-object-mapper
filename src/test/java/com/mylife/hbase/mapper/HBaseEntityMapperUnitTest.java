@@ -16,6 +16,12 @@
 
 package com.mylife.hbase.mapper;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.powermock.api.mockito.PowerMockito.when;
+
 import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -26,6 +32,7 @@ import java.util.TreeMap;
 
 import javax.mail.internet.ContentType;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Result;
@@ -36,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
+import org.springframework.integration.transformer.ObjectToMapTransformer;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSortedMap;
@@ -47,13 +55,6 @@ import com.mylife.hbase.mapper.model.TestModelWithDifferentBadMap;
 import com.mylife.hbase.mapper.model.TestModelWithGoodMap;
 import com.mylife.hbase.mapper.model.TestModelWithNoMap;
 import com.mylife.hbase.mapper.util.TypeHandler;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
-import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * Description here!
@@ -193,6 +194,7 @@ public class HBaseEntityMapperUnitTest {
     @Before
     @Test
     public void hBaseEntityMapperConstrutorTest() throws Exception {
+        Whitebox.setInternalState(hTablePool, Configuration.class, new Configuration());
         this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
         // This setups the state of the entity mapper lets inspect that too make
         // sure its right.
@@ -220,6 +222,12 @@ public class HBaseEntityMapperUnitTest {
                 1,
                 annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.get(
                         (Class) TestModelWithGoodMap.class).size());
+    }
+
+    public class MyObjectToMapTransformer extends ObjectToMapTransformer {
+        public Map<String, Object> transformObjectToMap(final Object object) throws Exception {
+            return super.transformPayload(object);
+        }
     }
 
     @Test
@@ -314,27 +322,33 @@ public class HBaseEntityMapperUnitTest {
     public void objectFromMapTest() throws Exception {
         final NavigableMap<byte[], NavigableMap<byte[], byte[]>> columnFamilyResultMap = new TreeMap<byte[], NavigableMap<byte[], byte[]>>(
                 Bytes.BYTES_COMPARATOR);
-        
-        columnFamilyResultMap.put(
-                Bytes.toBytes("OTHER_STUFF"),
-                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
-                        Bytes.toBytes("longField"), Bytes.toBytes(testModelWithGoodMapExpected.getLongField())).build()));
+
+        columnFamilyResultMap
+                .put(Bytes.toBytes("OTHER_STUFF"),
+                        new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(
+                                Bytes.BYTES_COMPARATOR).put(Bytes.toBytes("longField"),
+                                Bytes.toBytes(testModelWithGoodMapExpected.getLongField())).build()));
         columnFamilyResultMap.put(
                 Bytes.toBytes("STUFF"),
                 new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
-                        Bytes.toBytes("stringField"), Bytes.toBytes(testModelWithGoodMapExpected.getStringField())).build()));
+                        Bytes.toBytes("stringField"), Bytes.toBytes(testModelWithGoodMapExpected.getStringField()))
+                        .build()));
         columnFamilyResultMap.put(
                 Bytes.toBytes("MORE_STUFF"),
                 new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
-                        Bytes.toBytes("booleanField"), Bytes.toBytes(testModelWithGoodMapExpected.getBooleanField())).build()));
+                        Bytes.toBytes("booleanField"), Bytes.toBytes(testModelWithGoodMapExpected.getBooleanField()))
+                        .build()));
         columnFamilyResultMap.get(Bytes.toBytes("OTHER_STUFF")).put(Bytes.toBytes("byteArrayField"),
                 testModelWithGoodMapExpected.getByteArrayField());
 
-        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(
-                        Bytes.toBytes("elementTypeField"), Bytes.toBytes(ElementType.ANNOTATION_TYPE.name()));
-        columnFamilyResultMap.put(Bytes.toBytes("MAP_STUFF"),
-                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(Bytes.toBytes("testKey"), Bytes.toBytes("testValue")).build()));
-        columnFamilyResultMap.get(Bytes.toBytes("MAP_STUFF")).put(Bytes.toBytes("otherKey"), Bytes.toBytes("otherValue"));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("elementTypeField"),
+                Bytes.toBytes(ElementType.ANNOTATION_TYPE.name()));
+        columnFamilyResultMap.put(
+                Bytes.toBytes("MAP_STUFF"),
+                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
+                        Bytes.toBytes("testKey"), Bytes.toBytes("testValue")).build()));
+        columnFamilyResultMap.get(Bytes.toBytes("MAP_STUFF")).put(Bytes.toBytes("otherKey"),
+                Bytes.toBytes("otherValue"));
 
         when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
 

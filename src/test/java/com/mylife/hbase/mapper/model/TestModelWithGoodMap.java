@@ -16,9 +16,15 @@
 
 package com.mylife.hbase.mapper.model;
 
+import java.io.File;
 import java.lang.annotation.ElementType;
+import java.net.URI;
+import java.net.URL;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+
+import javax.mail.URLName;
 
 import com.google.common.collect.ImmutableMap;
 import com.mylife.hbase.mapper.annotation.HBaseField;
@@ -54,7 +60,7 @@ public class TestModelWithGoodMap {
     @HBaseMapField(columnFamilyName="MAP_STUFF")
     private Map<String, String> goodMap;
 
-    public Long getLongField() {
+	public Long getLongField() {
         return longField;
     }
 

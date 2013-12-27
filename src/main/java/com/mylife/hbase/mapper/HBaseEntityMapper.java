@@ -20,6 +20,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -37,6 +38,11 @@ import java.util.TreeMap;
 
 import javax.mail.internet.ContentType;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.MasterNotRunningException;
+import org.apache.hadoop.hbase.ZooKeeperConnectionException;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
@@ -60,6 +66,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.mylife.hbase.mapper.annotation.HBaseField;
 import com.mylife.hbase.mapper.annotation.HBaseMapField;
+import com.mylife.hbase.mapper.annotation.HBaseObjectField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 import com.mylife.hbase.mapper.util.TypeHandler;
@@ -77,14 +84,13 @@ public class HBaseEntityMapper {
 
     private final HTablePool hTablePool;
 
-    @SuppressWarnings("rawtypes")
-    private final ImmutableMap<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod;
+    private final ImmutableMap<Class<?>, ? extends AccessibleObject> annotatedClassToAnnotatedHBaseRowKey;
 
-    @SuppressWarnings("rawtypes")
-    private final ImmutableMap<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod;
+    private final ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod;
 
-    @SuppressWarnings("rawtypes")
-    private final ImmutableMap<Class, ? extends AccessibleObject> annotatedClassToAnnotatedHBaseRowKey;
+    private final ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod;
+
+    private final ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod;
 
     private final ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(
             false);
@@ -92,18 +98,31 @@ public class HBaseEntityMapper {
     @SuppressWarnings("unchecked")
     public HBaseEntityMapper(HTablePool hTablePool, String... basePackages) {
 
+        final HBaseAdmin hBaseAdmin;
+        try {
+            hBaseAdmin = new HBaseAdmin((Configuration) Whitebox.getInternalState(hTablePool, "config"));
+        } catch (MasterNotRunningException | ZooKeeperConnectionException e) {
+            LOG.fatal("Could not connect to HBase failing HBase object mapping!", e);
+            this.hTablePool = null;
+            this.annotatedClassToAnnotatedHBaseRowKey = null;
+            this.annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod = null;
+            this.annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod = null;
+            this.annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod = null;
+            return;
+        }
+
         this.hTablePool = hTablePool;
 
-        @SuppressWarnings("rawtypes")
-        final Builder<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
+        final Builder<Class<?>, AccessibleObject> annotatedClassToAnnotatedHBaseRowKeyBuilder = ImmutableMap.builder();
+
+        final Builder<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
                 .builder();
 
-        @SuppressWarnings("rawtypes")
-        final Builder<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
+        final Builder<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
                 .builder();
 
-        @SuppressWarnings("rawtypes")
-        final Builder<Class, AccessibleObject> annotatedClassToAnnotatedHBaseRowKeyBuilder = ImmutableMap.builder();
+        final Builder<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
+                .builder();
 
         scanner.addIncludeFilter(new AnnotationTypeFilter(HBasePersistance.class));
 
@@ -111,8 +130,7 @@ public class HBaseEntityMapper {
             // for each package get the classes with the HBasePersistance
             // annotation
             for (final BeanDefinition beanDefinition : scanner.findCandidateComponents(basePackage)) {
-                @SuppressWarnings("rawtypes")
-                final Class annotatedClass;
+                final Class<?> annotatedClass;
                 try {
                     annotatedClass = Class.forName(beanDefinition.getBeanClassName());
                 } catch (ClassNotFoundException e) {
@@ -120,9 +138,43 @@ public class HBaseEntityMapper {
                     LOG.error("ClassNotFoundException while loading class for HBase entity mapper", e);
                     throw new RuntimeException(e);
                 }
+                final String tableName = annotatedClass.getAnnotation(HBasePersistance.class).tableName();
+                if (StringUtils.isEmpty(tableName)) {
+                    LOG.error("@HBasePersistance must have a non-empty tableName. Ignoring: " + annotatedClass);
+                    continue;
+                }
 
-                //TODO add check that tablename and defaultcolumnfamily are not empty in @HBasePersistance!
-                
+                try {
+                    if (!hBaseAdmin.tableExists(tableName)) {
+                        LOG.error("table " + tableName + "in @HBasePersistance.tableName() does not exist. Ignoring: "
+                                + annotatedClass);
+                    }
+                } catch (IOException e) {
+                    LOG.error("Could not verify table " + tableName
+                            + "in @HBasePersistance.tableName() exists. Ignoring: " + annotatedClass, e);
+                }
+
+                final String defaultColumnFamilyName = annotatedClass.getAnnotation(HBasePersistance.class)
+                        .defaultColumnFamilyName();
+                if (StringUtils.isEmpty(defaultColumnFamilyName)) {
+                    LOG.error("@HBasePersistance must have a non-empty defaultColumnFamilyName. Ignoring: "
+                            + annotatedClass);
+                    continue;
+                }
+
+                try {
+                    if (!hBaseAdmin.getTableDescriptor(Bytes.toBytes(tableName)).hasFamily(
+                            Bytes.toBytes(defaultColumnFamilyName))) {
+                        LOG.error("defaultColumnFamilyName (" + defaultColumnFamilyName + ") in " + tableName
+                                + "in @HBasePersistance.defaultColumnFamilyName() does not exist. Ignoring: "
+                                + annotatedClass);
+                    }
+                } catch (IOException e) {
+                    LOG.error("Could not verify defaultColumnFamilyName (" + defaultColumnFamilyName + ") in "
+                            + tableName + "in @HBasePersistance.defaultColumnFamilyName() exists. Ignoring: "
+                            + annotatedClass, e);
+                }
+
                 // figure out which method or field to use as the HBaseRowKey
                 final Set<Field> hBaseRowKeyFields = Whitebox.getFieldsAnnotatedWith(
                         Whitebox.newInstance(annotatedClass), HBaseRowKey.class);
@@ -168,6 +220,13 @@ public class HBaseEntityMapper {
                                 ImmutableSet.copyOf(Whitebox.getFieldsAnnotatedWith(
                                         Whitebox.newInstance(annotatedClass), HBaseField.class))));
 
+                annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodBuilder.put(
+                        annotatedClass,
+                        fieldsToGetterMap(
+                                annotatedClass,
+                                ImmutableSet.copyOf(Whitebox.getFieldsAnnotatedWith(
+                                        Whitebox.newInstance(annotatedClass), HBaseObjectField.class))));
+
                 final Set<Field> hBaseMapFields = Whitebox.getFieldsAnnotatedWith(Whitebox.newInstance(annotatedClass),
                         HBaseMapField.class);
 
@@ -193,13 +252,17 @@ public class HBaseEntityMapper {
             }
         }
 
+        this.annotatedClassToAnnotatedHBaseRowKey = annotatedClassToAnnotatedHBaseRowKeyBuilder.build();
+
         this.annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod = annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodBuilder
+                .build();
+
+        this.annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod = annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodBuilder
                 .build();
 
         this.annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod = annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodBuilder
                 .build();
 
-        this.annotatedClassToAnnotatedHBaseRowKey = annotatedClassToAnnotatedHBaseRowKeyBuilder.build();
     }
 
     public void save(final Object hbasePersistableObject) throws Exception {
@@ -240,6 +303,8 @@ public class HBaseEntityMapper {
             ReflectionUtils.makeAccessible(field);
             ReflectionUtils.setField(field, type, map);
         }
+
+        // TODO add support for new @HBaseObjectField
         return type;
 
     }
@@ -298,11 +363,13 @@ public class HBaseEntityMapper {
 
                             @Override
                             public Put apply(Entry<String, Object> input) {
-                                return buildPut(columnFamilyNameFromHBaseMapFieldAnnotatedField(field), rowKey, input.getKey(), input.getValue());
+                                return buildPut(columnFamilyNameFromHBaseMapFieldAnnotatedField(field), rowKey,
+                                        input.getKey(), input.getValue());
                             }
                         }));
             }
         }
+        // TODO add support for new @HBaseObjectField
         return puts.build();
     }
 
@@ -328,24 +395,32 @@ public class HBaseEntityMapper {
         return Bytes.toBytes(hBasePersistanceClass.getAnnotation(HBasePersistance.class).defaultColumnFamilyName());
     }
 
-    private byte[] defaultColumnFamilyNameFrom(final Object hbasePersistableObject) {
-        return defaultColumnFamilyNameFrom(hbasePersistableObject.getClass());
-    }
-
+    // TODO cache this up front that will (maybe?) speed things up and allow for
+    // verifying all column family names ahead of time
     private byte[] columnFamilyNameFromHBaseFieldAnnotatedField(final Field hbaseFieldAnnotatedField) {
         return hbaseFieldAnnotatedField.getAnnotation(HBaseField.class).columnFamilyName().isEmpty() ? defaultColumnFamilyNameFrom(hbaseFieldAnnotatedField
                 .getDeclaringClass()) : Bytes.toBytes(hbaseFieldAnnotatedField.getAnnotation(HBaseField.class)
                 .columnFamilyName());
     }
 
+    // TODO cache this up front that will (maybe?) speed things up and allow for
+    // verifying all column family names ahead of time
     private byte[] columnFamilyNameFromHBaseMapFieldAnnotatedField(final Field hbaseMapFieldAnnotatedField) {
         return hbaseMapFieldAnnotatedField.getAnnotation(HBaseMapField.class).columnFamilyName().isEmpty() ? defaultColumnFamilyNameFrom(hbaseMapFieldAnnotatedField
                 .getDeclaringClass()) : Bytes.toBytes(hbaseMapFieldAnnotatedField.getAnnotation(HBaseMapField.class)
                 .columnFamilyName());
     }
 
+    // TODO cache this up front that will (maybe?) speed things up and allow for
+    // verifying all column family names ahead of time
+    private byte[] columnFamilyNameFromHBaseObjectFieldAnnotatedField(final Field hbaseMapFieldAnnotatedField) {
+        return hbaseMapFieldAnnotatedField.getAnnotation(HBaseObjectField.class).columnFamilyName().isEmpty() ? defaultColumnFamilyNameFrom(hbaseMapFieldAnnotatedField
+                .getDeclaringClass()) : Bytes.toBytes(hbaseMapFieldAnnotatedField.getAnnotation(HBaseObjectField.class)
+                .columnFamilyName());
+    }
+
     private Object fieldValue(final Field field, final Object hbasePersistableObject,
-            @SuppressWarnings("rawtypes") final ImmutableMap<Class, ImmutableMap<Field, Method>> map) {
+            final ImmutableMap<Class<?>, ImmutableMap<Field, Method>> map) {
         final Method getter = map.get(hbasePersistableObject.getClass()).get(field);
         ReflectionUtils.makeAccessible(getter);
         return ReflectionUtils.invokeMethod(getter, hbasePersistableObject);
