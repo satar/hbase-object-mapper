@@ -53,7 +53,6 @@ import org.powermock.reflect.Whitebox;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.integration.transformer.ObjectToMapTransformer;
 import org.springframework.util.ReflectionUtils;
 
 import com.google.common.base.Function;
@@ -83,7 +82,7 @@ public class HBaseEntityMapper {
 
     private static final transient Logger LOG = Logger.getLogger(HBaseEntityMapper.class);
 
-    private final ObjectToMapTransformer objectToMapTransformer = new ObjectToMapTransformer();
+    private final ObjectToFlattenedMapTransformer objectToFlattenedMapTransformer = new ObjectToFlattenedMapTransformer();
 
     private final HTablePool hTablePool;
 

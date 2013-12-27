@@ -20,14 +20,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -37,6 +38,7 @@ import javax.mail.internet.ContentType;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.MasterNotRunningException;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
@@ -53,9 +55,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
-import org.springframework.integration.transformer.ObjectToMapTransformer;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSortedMap;
@@ -69,7 +69,7 @@ import com.mylife.hbase.mapper.model.TestModelWithNoMap;
 import com.mylife.hbase.mapper.util.TypeHandler;
 
 /**
- * Description here!
+ * Unit testing for the core class HBaseEntityMapper
  * 
  * 
  * @author Mike E
@@ -225,7 +225,6 @@ public class HBaseEntityMapperUnitTest {
 
     HBaseEntityMapper hBaseEntityMapper;
 
-    @SuppressWarnings("rawtypes")
     @Before
     @Test
     public void hBaseEntityMapperConstrutorTest() throws Exception {
@@ -238,36 +237,122 @@ public class HBaseEntityMapperUnitTest {
         this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
         // This setups the state of the entity mapper lets inspect that too make
         // sure that the internal state of the entity mapper is correct.
-        ImmutableMap<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
         assertFalse(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
         assertEquals(6, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
-                .get((Class) TestModel.class));
+                .get((Class<?>) TestModel.class));
         assertEquals(9,
                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.get((Class) TestModel.class)
                         .size());
         assertEquals(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected,
                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual);
 
-        ImmutableMap<Class, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual = Whitebox
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod");
         assertFalse(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
         assertEquals(1, annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual
-                .get((Class) TestModelWithGoodMap.class));
+                .get((Class<?>) TestModelWithGoodMap.class));
         assertEquals(
                 1,
                 annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.get(
-                        (Class) TestModelWithGoodMap.class).size());
+                        (Class<?>) TestModelWithGoodMap.class).size());
     }
 
-    public class MyObjectToMapTransformer extends ObjectToMapTransformer {
-        public Map<String, Object> transformObjectToMap(final Object object) throws Exception {
-            return super.transformPayload(object);
-        }
+    @SuppressWarnings("unchecked")
+    @Test
+    public void hBaseEntityMapperConstrutorCannotConnectToHBaseTest() throws Exception {
+        final Configuration configuration = new Configuration();
+        Whitebox.setInternalState(hTablePool, Configuration.class, configuration);
+        PowerMockito.whenNew(HBaseAdmin.class).withArguments(configuration).thenThrow(MasterNotRunningException.class);
+        this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
+        assertNull(Whitebox.getInternalState(this.hBaseEntityMapper, "hTablePool"));
+        assertNull(Whitebox.getInternalState(this.hBaseEntityMapper, "annotatedClassToAnnotatedHBaseRowKey"));
+        assertNull(Whitebox.getInternalState(this.hBaseEntityMapper,
+                "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod"));
+        assertNull(Whitebox.getInternalState(this.hBaseEntityMapper,
+                "annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod"));
+        assertNull(Whitebox.getInternalState(this.hBaseEntityMapper,
+                "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod"));
+    }
+
+    @Test
+    public void hBaseEntityMapperConstrutorNoTableExistsTest() throws Exception {
+        final Configuration configuration = new Configuration();
+        Whitebox.setInternalState(hTablePool, Configuration.class, configuration);
+        PowerMockito.whenNew(HBaseAdmin.class).withArguments(configuration).thenReturn(hBaseAdmin);
+        when(hBaseAdmin.tableExists(anyString())).thenReturn(false);
+        this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
+
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
+    }
+
+    @Test
+    public void hBaseEntityMapperConstrutorCannotVerifyTableExistsTest() throws Exception {
+        final Configuration configuration = new Configuration();
+        Whitebox.setInternalState(hTablePool, Configuration.class, configuration);
+        PowerMockito.whenNew(HBaseAdmin.class).withArguments(configuration).thenReturn(hBaseAdmin);
+        when(hBaseAdmin.tableExists(anyString())).thenThrow(new IOException("TEST EXCEPTION"));
+        this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
+
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
+    }
+
+    @Test
+    public void hBaseEntityMapperConstrutorNoDefaultColumnFamilyExistsTest() throws Exception {
+        final Configuration configuration = new Configuration();
+        Whitebox.setInternalState(hTablePool, Configuration.class, configuration);
+        PowerMockito.whenNew(HBaseAdmin.class).withArguments(configuration).thenReturn(hBaseAdmin);
+        when(hBaseAdmin.tableExists(anyString())).thenReturn(true);
+        when(hBaseAdmin.getTableDescriptor((byte[]) any())).thenReturn(hTableDescriptor);
+        when(hTableDescriptor.hasFamily((byte[]) any())).thenReturn(false);
+        this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
+
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
+    }
+    
+    @Test
+    public void hBaseEntityMapperConstrutorCannotVerifyDefaultColumnFamilyExistsTest() throws Exception {
+        final Configuration configuration = new Configuration();
+        Whitebox.setInternalState(hTablePool, Configuration.class, configuration);
+        PowerMockito.whenNew(HBaseAdmin.class).withArguments(configuration).thenReturn(hBaseAdmin);
+        when(hBaseAdmin.tableExists(anyString())).thenReturn(true);
+        when(hBaseAdmin.getTableDescriptor((byte[]) any())).thenThrow(new IOException("TEST EXCEPTION"));
+        this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
+
+        ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual = Whitebox
+                .getInternalState(hBaseEntityMapper,
+                        "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod");
+        assertTrue(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
     }
 
     @Test

@@ -27,9 +27,9 @@ import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with some valid types and a bad map backing object
+ * A test POJO with unsupported map key and value types with @HBaseMapField
  * 
- * @author
+ * @author Mike E
  */
 
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")

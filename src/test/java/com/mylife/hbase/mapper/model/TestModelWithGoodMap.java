@@ -16,15 +16,9 @@
 
 package com.mylife.hbase.mapper.model;
 
-import java.io.File;
 import java.lang.annotation.ElementType;
-import java.net.URI;
-import java.net.URL;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-
-import javax.mail.URLName;
 
 import com.google.common.collect.ImmutableMap;
 import com.mylife.hbase.mapper.annotation.HBaseField;
@@ -35,7 +29,7 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 /**
  * A test POJO with some valid types and a good map backing object
  * 
- * @author
+ * @author Mike E
  */
 
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")

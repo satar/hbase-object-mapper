@@ -28,10 +28,9 @@ import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with all of the supported types. As types are added this model
- * should be updated as well.
+ * A test POJO with extra @HBaseRowKey
  * 
- * @author
+ * @author Mike E
  */
 
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")

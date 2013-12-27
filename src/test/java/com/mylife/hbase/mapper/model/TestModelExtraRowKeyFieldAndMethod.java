@@ -17,21 +17,17 @@
 package com.mylife.hbase.mapper.model;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import javax.mail.internet.ContentType;
 
 import com.mylife.hbase.mapper.annotation.HBaseField;
-import com.mylife.hbase.mapper.annotation.HBaseMapField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with all of the supported types. As types are added this model
- * should be updated as well.
+ * A test POJO with extra @HBaseRowKey one on a method one on an field 
  * 
- * @author
+ * @author Mike E
  */
 
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
