@@ -56,6 +56,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSortedMap;
@@ -66,6 +67,7 @@ import com.mylife.hbase.mapper.model.TestModelWithBadMap;
 import com.mylife.hbase.mapper.model.TestModelWithDifferentBadMap;
 import com.mylife.hbase.mapper.model.TestModelWithGoodMap;
 import com.mylife.hbase.mapper.model.TestModelWithNoMap;
+import com.mylife.hbase.mapper.model.TestModelWithUnsupportedTypeAnnotated;
 import com.mylife.hbase.mapper.util.TypeHandler;
 
 /**
@@ -97,6 +99,8 @@ public class HBaseEntityMapperUnitTest {
     private final TestModelWithGoodMap testModelWithGoodMapExpected = new TestModelWithGoodMap(1l, "2", false,
             new byte[] { 3 }, ElementType.ANNOTATION_TYPE, ImmutableMap.of("testKey", "testValue", "otherKey",
                     "otherValue"));
+    
+    private final TestModelWithUnsupportedTypeAnnotated testModelWithUnsupportedTypeAnnotated = new TestModelWithUnsupportedTypeAnnotated((short)0, ImmutableList.of((short)1,(short)2));
 
     private final static Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected = BUILD_TEST_MAP();
 
@@ -205,6 +209,15 @@ public class HBaseEntityMapperUnitTest {
 
                         Whitebox.getField(TestModelOnlyFields.class, "elementTypeField"),
                         Whitebox.getMethod(TestModelOnlyFields.class, "getElementTypeField")));
+        
+        testMap.put(
+                (Class<?>) TestModelWithUnsupportedTypeAnnotated.class,
+                ImmutableMap.of(Whitebox.getField(TestModelWithUnsupportedTypeAnnotated.class, "shortField"),
+                        Whitebox.getMethod(TestModelWithUnsupportedTypeAnnotated.class, "getShortField"),
+
+                        Whitebox.getField(TestModelWithUnsupportedTypeAnnotated.class, "shorts"),
+                        Whitebox.getMethod(TestModelWithUnsupportedTypeAnnotated.class, "getShorts")));
+        
         return testMap;
     }
 
@@ -241,7 +254,7 @@ public class HBaseEntityMapperUnitTest {
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
         assertFalse(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
-        assertEquals(6, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
+        assertEquals(7, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
                 .get((Class<?>) TestModel.class));
         assertEquals(9,
@@ -377,6 +390,14 @@ public class HBaseEntityMapperUnitTest {
         when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
                 hTableInterface);
         this.hBaseEntityMapper.save(testModelWithGoodMapExpected);
+    }
+    
+    @Test(expected=IllegalArgumentException.class)
+    public void saveUnsupportedTypeTest() throws Exception {
+
+        when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
+                hTableInterface);
+        this.hBaseEntityMapper.save(testModelWithUnsupportedTypeAnnotated);
     }
 
     @Test
