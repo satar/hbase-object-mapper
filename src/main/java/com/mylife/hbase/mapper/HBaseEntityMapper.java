@@ -20,9 +20,12 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -34,7 +37,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
-import java.util.TreeMap;
 
 import javax.mail.internet.ContentType;
 
@@ -49,12 +51,18 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
+import org.iq80.snappy.SnappyInputStream;
+import org.iq80.snappy.SnappyOutputStream;
 import org.powermock.reflect.Whitebox;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.ReflectionUtils;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
@@ -81,8 +89,6 @@ import com.mylife.hbase.mapper.util.TypeHandler;
 public class HBaseEntityMapper {
 
     private static final transient Logger LOG = Logger.getLogger(HBaseEntityMapper.class);
-
-    private final ObjectToFlattenedMapTransformer objectToFlattenedMapTransformer = new ObjectToFlattenedMapTransformer();
 
     private final HTablePool hTablePool;
 
@@ -247,7 +253,7 @@ public class HBaseEntityMapper {
                 final Field field = hBaseMapFieldsIterator.next();
                 final Type[] types = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
 
-                if (!Map.class.equals(field.getType()) || !String.class.equals((Class<?>) types[0])
+                if (!Map.class.isAssignableFrom(field.getType()) || !String.class.equals((Class<?>) types[0])
                         || !String.class.equals((Class<?>) types[1])) {
                     LOG.error("@HBaseMapField can only be used on fields assignable from java.util.Map<String, String>. Ignoring: "
                             + annotatedClass);
@@ -272,6 +278,7 @@ public class HBaseEntityMapper {
     }
 
     public void save(final Object hbasePersistableObject) throws Exception {
+        // TODO verify that object is hbasePersistableObject!
         final HTableInterface hTable = hTablePool.getTable(hbasePersistableObject.getClass()
                 .getAnnotation(HBasePersistance.class).tableName());
         try {
@@ -281,7 +288,9 @@ public class HBaseEntityMapper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends Object> T objectFrom(final Result result, final Class<T> hBasePersistanceClass) {
+        // TODO verify that class is hBasePersistanceClass!
         if (result.isEmpty()) {
             return null;
         }
@@ -298,23 +307,45 @@ public class HBaseEntityMapper {
                             columnFamilyResultMap.get(columnFamilyNameFromHBaseFieldAnnotatedField(field)).remove(
                                     Bytes.toBytes(field.getName()))));
         }
-        if (annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod.get(hBasePersistanceClass) != null) {
-            final Field field = annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod
-                    .get(hBasePersistanceClass).keySet().iterator().next();
-            final Map<String, String> map = new TreeMap<String, String>();
-            for (final Entry<byte[], byte[]> entry : columnFamilyResultMap.get(
-                    columnFamilyNameFromHBaseMapFieldAnnotatedField(field)).entrySet()) {
-                map.put(Bytes.toString(entry.getKey()), Bytes.toString(entry.getValue()));
-            }
-            ReflectionUtils.makeAccessible(field);
-            ReflectionUtils.setField(field, type, map);
-        }
 
         // TODO add support for new @HBaseObjectField
         for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
                 hBasePersistanceClass).keySet()) {
+            ReflectionUtils.makeAccessible(field);
+            try {
+                ReflectionUtils.setField(
+                        field,
+                        type,
 
+                        getKryo().readObject(
+                                new Input(new SnappyInputStream(new ByteArrayInputStream(columnFamilyResultMap.get(
+                                        columnFamilyNameFromHBaseFieldAnnotatedField(field)).remove(
+                                        Bytes.toBytes(field.getName()))))), field.getType()));
+            } catch (IOException e) {
+                LOG.error("Could not deserialize " + field.getName(), e);
+            }
         }
+        mapFieldBlock: {
+            if (annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod.get(hBasePersistanceClass) != null) {
+                final Field field = annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod
+                        .get(hBasePersistanceClass).keySet().iterator().next();
+                Map<String, String> map;
+                try {
+                    map = (Map<String, String>) Whitebox.getConstructor(field.getType()).newInstance((Object[])null);
+                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                        | InvocationTargetException e) {
+                    LOG.error("Could not create new instance of map.", e);
+                    break mapFieldBlock;
+                }
+                for (final Entry<byte[], byte[]> entry : columnFamilyResultMap.get(
+                        columnFamilyNameFromHBaseMapFieldAnnotatedField(field)).entrySet()) {
+                    map.put(Bytes.toString(entry.getKey()), Bytes.toString(entry.getValue()));
+                }
+                ReflectionUtils.makeAccessible(field);
+                ReflectionUtils.setField(field, type, map);
+            }
+        }
+
         return type;
 
     }
@@ -362,6 +393,23 @@ public class HBaseEntityMapper {
                                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod)));
             }
         }
+        // TODO add support for new @HBaseObjectField
+        if (annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(hbasePersistableObject
+                .getClass()) != null) {
+            for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
+                    hbasePersistableObject.getClass()).keySet()) {
+                final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                final Output output = new Output(new SnappyOutputStream(byteArrayOutputStream));
+                getKryo().writeObject(
+                        output,
+                        fieldValue(field, hbasePersistableObject,
+                                annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod));
+                output.close();
+                puts.add(buildPut(columnFamilyNameFromHBaseObjectFieldAnnotatedField(field), rowKey, field.getName(),
+                        byteArrayOutputStream.toByteArray()));
+            }
+        }
+
         if (annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod
                 .get(hbasePersistableObject.getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod.get(
@@ -379,7 +427,7 @@ public class HBaseEntityMapper {
                         }));
             }
         }
-        // TODO add support for new @HBaseObjectField
+
         return puts.build();
     }
 
@@ -463,5 +511,11 @@ public class HBaseEntityMapper {
             throw new IllegalArgumentException("Unknow type: " + value.getClass()
                     + " please add handling for this type");
         }
+    }
+
+    private Kryo getKryo() {
+        final Kryo kryo = new Kryo();
+        kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+        return kryo;
     }
 }

@@ -65,6 +65,7 @@ import com.mylife.hbase.mapper.model.TestModel;
 import com.mylife.hbase.mapper.model.TestModelOnlyFields;
 import com.mylife.hbase.mapper.model.TestModelWithBadMap;
 import com.mylife.hbase.mapper.model.TestModelWithDifferentBadMap;
+import com.mylife.hbase.mapper.model.TestModelWithGoodHashMap;
 import com.mylife.hbase.mapper.model.TestModelWithGoodMap;
 import com.mylife.hbase.mapper.model.TestModelWithNoMap;
 import com.mylife.hbase.mapper.model.TestModelWithUnsupportedTypeAnnotated;
@@ -99,8 +100,13 @@ public class HBaseEntityMapperUnitTest {
     private final TestModelWithGoodMap testModelWithGoodMapExpected = new TestModelWithGoodMap(1l, "2", false,
             new byte[] { 3 }, ElementType.ANNOTATION_TYPE, ImmutableMap.of("testKey", "testValue", "otherKey",
                     "otherValue"));
-    
-    private final TestModelWithUnsupportedTypeAnnotated testModelWithUnsupportedTypeAnnotated = new TestModelWithUnsupportedTypeAnnotated((short)0, ImmutableList.of((short)1,(short)2));
+    // TODO USE ME!
+    private final TestModelWithGoodHashMap testModelWithGoodHashMapExpected = new TestModelWithGoodHashMap(1l, "2",
+            false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, new HashMap<String, String>(ImmutableMap.of(
+                    "testKey", "testValue", "otherKey", "otherValue")));
+
+    private final TestModelWithUnsupportedTypeAnnotated testModelWithUnsupportedTypeAnnotated = new TestModelWithUnsupportedTypeAnnotated(
+            (short) 0, ImmutableList.of((short) 1, (short) 2));
 
     private final static Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected = BUILD_TEST_MAP();
 
@@ -209,7 +215,7 @@ public class HBaseEntityMapperUnitTest {
 
                         Whitebox.getField(TestModelOnlyFields.class, "elementTypeField"),
                         Whitebox.getMethod(TestModelOnlyFields.class, "getElementTypeField")));
-        
+
         testMap.put(
                 (Class<?>) TestModelWithUnsupportedTypeAnnotated.class,
                 ImmutableMap.of(Whitebox.getField(TestModelWithUnsupportedTypeAnnotated.class, "shortField"),
@@ -217,7 +223,7 @@ public class HBaseEntityMapperUnitTest {
 
                         Whitebox.getField(TestModelWithUnsupportedTypeAnnotated.class, "shorts"),
                         Whitebox.getMethod(TestModelWithUnsupportedTypeAnnotated.class, "getShorts")));
-        
+
         return testMap;
     }
 
@@ -258,8 +264,8 @@ public class HBaseEntityMapperUnitTest {
         assertNotNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
                 .get((Class<?>) TestModel.class));
         assertEquals(9,
-                annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.get((Class) TestModel.class)
-                        .size());
+                annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
+                        .get((Class<?>) TestModel.class).size());
         assertEquals(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected,
                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual);
 
@@ -348,7 +354,7 @@ public class HBaseEntityMapperUnitTest {
                         "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod");
         assertTrue(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
     }
-    
+
     @Test
     public void hBaseEntityMapperConstrutorCannotVerifyDefaultColumnFamilyExistsTest() throws Exception {
         final Configuration configuration = new Configuration();
@@ -391,8 +397,8 @@ public class HBaseEntityMapperUnitTest {
                 hTableInterface);
         this.hBaseEntityMapper.save(testModelWithGoodMapExpected);
     }
-    
-    @Test(expected=IllegalArgumentException.class)
+
+    @Test(expected = IllegalArgumentException.class)
     public void saveUnsupportedTypeTest() throws Exception {
 
         when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
