@@ -20,7 +20,6 @@ import java.lang.annotation.ElementType;
 import java.util.Arrays;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
 import com.mylife.hbase.mapper.annotation.HBaseField;
 import com.mylife.hbase.mapper.annotation.HBaseMapField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
@@ -54,7 +53,7 @@ public class TestModelWithGoodMap {
     @HBaseMapField(columnFamilyName="MAP_STUFF")
     private Map<String, String> goodMap;
 
-	public Long getLongField() {
+    public Long getLongField() {
         return longField;
     }
 
@@ -165,7 +164,7 @@ public class TestModelWithGoodMap {
     }
 
     public TestModelWithGoodMap(Long longField, String stringField, Boolean booleanField, byte[] byteArrayField,
-            ElementType elementTypeField, ImmutableMap<String, String> goodMap) {
+            ElementType elementTypeField, Map<String, String> goodMap) {
         super();
         this.longField = longField;
         this.stringField = stringField;
@@ -174,7 +173,5 @@ public class TestModelWithGoodMap {
         this.elementTypeField = elementTypeField;
         this.goodMap = goodMap;
     }
-
-
     
 }
