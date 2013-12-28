@@ -3,32 +3,32 @@
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
 
-    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
-        <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%-5p [%C{1}.%M(%L)] %m%n"/>
-        </layout>
-    </appender>
+	<appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%-5p [%C{1}.%M(%L)] %m%n" />
+		</layout>
+	</appender>
 
-    
-    <logger name="org.apache">
-        <level value="WARN"/>
-    </logger>   
-    
-    <logger name="org.springframework">
-        <level value="INFO"/>
-    </logger>
 
-    <logger name="com.mylife">
-        <level value="INFO"/>
-    </logger>
-    
-    <logger name="com.mylife.pmsg.client">
-        <level value="DEBUG"/>
-    </logger>    
+	<logger name="org.apache">
+		<level value="WARN" />
+	</logger>
 
-    <root>
-        <level value="INFO"/>
-        <appender-ref ref="CONSOLE"/>
-    </root>
+	<logger name="org.springframework">
+		<level value="INFO" />
+	</logger>
+
+	<logger name="com.mylife">
+		<level value="INFO" />
+	</logger>
+
+	<logger name="com.mylife.pmsg.client">
+		<level value="DEBUG" />
+	</logger>
+
+	<root>
+		<level value="INFO" />
+		<appender-ref ref="CONSOLE" />
+	</root>
 
 </log4j:configuration>
