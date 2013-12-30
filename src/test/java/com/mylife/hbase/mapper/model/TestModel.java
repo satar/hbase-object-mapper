@@ -17,18 +17,15 @@
 package com.mylife.hbase.mapper.model;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 import javax.mail.internet.ContentType;
 
 import com.mylife.hbase.mapper.annotation.HBaseField;
-import com.mylife.hbase.mapper.annotation.HBaseMapField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with all of the supported types. As types are added this model
+ * A test POJO with all of the supported fields. As types are added this model
  * should be updated as well.
  * 
  * @author Mike E
@@ -64,54 +61,84 @@ public class TestModel {
     @HBaseField
     private ContentType contentTypeField;
 
-    @HBaseMapField
-    private Map<Long, Object> badMap;
-
-    @HBaseMapField
-    private List<Long> notAMap;
-
     public Integer getIntegerField() {
         return integerField;
+    }
+
+    public void setIntegerField(Integer integerField) {
+        this.integerField = integerField;
     }
 
     public Short getShortField() {
         return shortField;
     }
 
+    public void setShortField(Short shortField) {
+        this.shortField = shortField;
+    }
+
     public Double getDoubleField() {
         return doubleField;
+    }
+
+    public void setDoubleField(Double doubleField) {
+        this.doubleField = doubleField;
     }
 
     public Float getFloatField() {
         return floatField;
     }
 
+    public void setFloatField(Float floatField) {
+        this.floatField = floatField;
+    }
+
     public Long getLongField() {
         return longField;
+    }
+
+    public void setLongField(Long longField) {
+        this.longField = longField;
     }
 
     public String getStringField() {
         return stringField;
     }
 
+    public void setStringField(String stringField) {
+        this.stringField = stringField;
+    }
+
     public Boolean getBooleanField() {
         return booleanField;
+    }
+
+    public void setBooleanField(Boolean booleanField) {
+        this.booleanField = booleanField;
     }
 
     public byte[] getByteArrayField() {
         return byteArrayField;
     }
 
+    public void setByteArrayField(byte[] byteArrayField) {
+        this.byteArrayField = byteArrayField;
+    }
+
     public ContentType getContentTypeField() {
         return contentTypeField;
     }
 
-    public Map<Long, Object> getBadMap() {
-        return badMap;
+    public void setContentTypeField(ContentType contentTypeField) {
+        this.contentTypeField = contentTypeField;
     }
 
-    public List<Long> getNotAMap() {
-        return notAMap;
+    @Override
+    public String toString() {
+        return "TestModel [integerField=" + integerField + ", shortField=" + shortField + ", doubleField="
+                + doubleField + ", floatField=" + floatField + ", longField=" + longField + ", stringField="
+                + stringField + ", booleanField=" + booleanField + ", byteArrayField="
+                + Arrays.toString(byteArrayField) + ", contentTypeField=" + contentTypeField + "]";
     }
 
     public TestModel(Integer integerField, Short shortField, Double doubleField, Float floatField, Long longField,
@@ -133,7 +160,6 @@ public class TestModel {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((badMap == null) ? 0 : badMap.hashCode());
         result = prime * result + ((booleanField == null) ? 0 : booleanField.hashCode());
         result = prime * result + Arrays.hashCode(byteArrayField);
         result = prime * result + ((contentTypeField == null) ? 0 : contentTypeField.hashCode());
@@ -141,7 +167,6 @@ public class TestModel {
         result = prime * result + ((floatField == null) ? 0 : floatField.hashCode());
         result = prime * result + ((integerField == null) ? 0 : integerField.hashCode());
         result = prime * result + ((longField == null) ? 0 : longField.hashCode());
-        result = prime * result + ((notAMap == null) ? 0 : notAMap.hashCode());
         result = prime * result + ((shortField == null) ? 0 : shortField.hashCode());
         result = prime * result + ((stringField == null) ? 0 : stringField.hashCode());
         return result;
@@ -156,11 +181,6 @@ public class TestModel {
         if (getClass() != obj.getClass())
             return false;
         TestModel other = (TestModel) obj;
-        if (badMap == null) {
-            if (other.badMap != null)
-                return false;
-        } else if (!badMap.equals(other.badMap))
-            return false;
         if (booleanField == null) {
             if (other.booleanField != null)
                 return false;
@@ -193,11 +213,6 @@ public class TestModel {
                 return false;
         } else if (!longField.equals(other.longField))
             return false;
-        if (notAMap == null) {
-            if (other.notAMap != null)
-                return false;
-        } else if (!notAMap.equals(other.notAMap))
-            return false;
         if (shortField == null) {
             if (other.shortField != null)
                 return false;
@@ -210,14 +225,4 @@ public class TestModel {
             return false;
         return true;
     }
-
-    @Override
-    public String toString() {
-        return "TestModel [integerField=" + integerField + ", shortField=" + shortField + ", doubleField="
-                + doubleField + ", floatField=" + floatField + ", longField=" + longField + ", stringField="
-                + stringField + ", booleanField=" + booleanField + ", byteArrayField="
-                + Arrays.toString(byteArrayField) + ", contentTypeField=" + contentTypeField + ", badMap=" + badMap
-                + ", notAMap=" + notAMap + "]";
-    }
-
 }

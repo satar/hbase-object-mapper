@@ -62,12 +62,8 @@ import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSortedMap;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.model.TestModel;
-import com.mylife.hbase.mapper.model.TestModelOnlyFields;
-import com.mylife.hbase.mapper.model.TestModelWithBadMap;
-import com.mylife.hbase.mapper.model.TestModelWithDifferentBadMap;
 import com.mylife.hbase.mapper.model.TestModelWithGoodHashMap;
-import com.mylife.hbase.mapper.model.TestModelWithGoodMap;
-import com.mylife.hbase.mapper.model.TestModelWithNoMap;
+import com.mylife.hbase.mapper.model.TestModelWithOnlyGoodMap;
 import com.mylife.hbase.mapper.model.TestModelWithUnsupportedTypeAnnotated;
 import com.mylife.hbase.mapper.util.TypeHandler;
 
@@ -97,10 +93,8 @@ public class HBaseEntityMapperUnitTest {
             3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346F,
             4L, "5", false, new byte[] { 6 }, null);
 
-    private final TestModelWithGoodMap testModelWithGoodMapExpected = new TestModelWithGoodMap(1l, "2", false,
-            new byte[] { 3 }, ElementType.ANNOTATION_TYPE, ImmutableMap.of("testKey", "testValue", "otherKey",
-                    "otherValue"));
-    // TODO USE ME!
+    private final TestModelWithOnlyGoodMap testModelWithGoodMapExpected = new TestModelWithOnlyGoodMap(ImmutableMap.of(
+            "testKey", "testValue", "otherKey", "otherValue"));
     private final TestModelWithGoodHashMap testModelWithGoodHashMapExpected = new TestModelWithGoodHashMap(1l, "2",
             false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, new HashMap<String, String>(ImmutableMap.of(
                     "testKey", "testValue", "otherKey", "otherValue")));
@@ -115,6 +109,10 @@ public class HBaseEntityMapperUnitTest {
         Map<Class<?>, ImmutableMap<Field, Method>> testMap = new HashMap<Class<?>, ImmutableMap<Field, Method>>();
 
         Builder<Field, Method> builder = ImmutableMap.builder();
+
+        // empty map
+        testMap.put((Class<?>) TestModelWithOnlyGoodMap.class, builder.build());
+
         builder.put(Whitebox.getField(TestModel.class, "longField"),
                 Whitebox.getMethod(TestModel.class, "getLongField"));
         builder.put(Whitebox.getField(TestModel.class, "stringField"),
@@ -135,94 +133,23 @@ public class HBaseEntityMapperUnitTest {
                 Whitebox.getMethod(TestModel.class, "getContentTypeField"));
 
         testMap.put((Class<?>) TestModel.class, builder.build());
-        testMap.put(
-                (Class<?>) TestModelWithGoodMap.class,
-                ImmutableMap.of(Whitebox.getField(TestModelWithGoodMap.class, "longField"),
-                        Whitebox.getMethod(TestModelWithGoodMap.class, "getLongField"),
-
-                        Whitebox.getField(TestModelWithGoodMap.class, "stringField"),
-                        Whitebox.getMethod(TestModelWithGoodMap.class, "getStringField"),
-
-                        Whitebox.getField(TestModelWithGoodMap.class, "booleanField"),
-                        Whitebox.getMethod(TestModelWithGoodMap.class, "getBooleanField"),
-
-                        Whitebox.getField(TestModelWithGoodMap.class, "byteArrayField"),
-                        Whitebox.getMethod(TestModelWithGoodMap.class, "getByteArrayField"),
-
-                        Whitebox.getField(TestModelWithGoodMap.class, "elementTypeField"),
-                        Whitebox.getMethod(TestModelWithGoodMap.class, "getElementTypeField")));
-        testMap.put(
-                (Class<?>) TestModelWithBadMap.class,
-                ImmutableMap.of(Whitebox.getField(TestModelWithBadMap.class, "longField"),
-                        Whitebox.getMethod(TestModelWithBadMap.class, "getLongField"),
-
-                        Whitebox.getField(TestModelWithBadMap.class, "stringField"),
-                        Whitebox.getMethod(TestModelWithBadMap.class, "getStringField"),
-
-                        Whitebox.getField(TestModelWithBadMap.class, "booleanField"),
-                        Whitebox.getMethod(TestModelWithBadMap.class, "getBooleanField"),
-
-                        Whitebox.getField(TestModelWithBadMap.class, "byteArrayField"),
-                        Whitebox.getMethod(TestModelWithBadMap.class, "getByteArrayField"),
-
-                        Whitebox.getField(TestModelWithBadMap.class, "contentTypeField"),
-                        Whitebox.getMethod(TestModelWithBadMap.class, "getContentTypeField")));
-        testMap.put(
-                (Class<?>) TestModelWithDifferentBadMap.class,
-                ImmutableMap.of(Whitebox.getField(TestModelWithDifferentBadMap.class, "longField"),
-                        Whitebox.getMethod(TestModelWithDifferentBadMap.class, "getLongField"),
-
-                        Whitebox.getField(TestModelWithDifferentBadMap.class, "stringField"),
-                        Whitebox.getMethod(TestModelWithDifferentBadMap.class, "getStringField"),
-
-                        Whitebox.getField(TestModelWithDifferentBadMap.class, "booleanField"),
-                        Whitebox.getMethod(TestModelWithDifferentBadMap.class, "getBooleanField"),
-
-                        Whitebox.getField(TestModelWithDifferentBadMap.class, "byteArrayField"),
-                        Whitebox.getMethod(TestModelWithDifferentBadMap.class, "getByteArrayField"),
-
-                        Whitebox.getField(TestModelWithDifferentBadMap.class, "contentTypeField"),
-                        Whitebox.getMethod(TestModelWithDifferentBadMap.class, "getContentTypeField")));
-        testMap.put(
-                (Class<?>) TestModelWithNoMap.class,
-                ImmutableMap.of(Whitebox.getField(TestModelWithNoMap.class, "integerField"),
-                        Whitebox.getMethod(TestModelWithNoMap.class, "getIntegerField"),
-
-                        Whitebox.getField(TestModelWithNoMap.class, "stringField"),
-                        Whitebox.getMethod(TestModelWithNoMap.class, "getStringField"),
-
-                        Whitebox.getField(TestModelWithNoMap.class, "booleanField"),
-                        Whitebox.getMethod(TestModelWithNoMap.class, "getBooleanField"),
-
-                        Whitebox.getField(TestModelWithNoMap.class, "byteArrayField"),
-                        Whitebox.getMethod(TestModelWithNoMap.class, "getByteArrayField"),
-
-                        Whitebox.getField(TestModelWithNoMap.class, "contentTypeField"),
-                        Whitebox.getMethod(TestModelWithNoMap.class, "getContentTypeField")));
-        testMap.put(
-                (Class<?>) TestModelOnlyFields.class,
-                ImmutableMap.of(Whitebox.getField(TestModelOnlyFields.class, "longField"),
-                        Whitebox.getMethod(TestModelOnlyFields.class, "getLongField"),
-
-                        Whitebox.getField(TestModelOnlyFields.class, "stringField"),
-                        Whitebox.getMethod(TestModelOnlyFields.class, "getStringField"),
-
-                        Whitebox.getField(TestModelOnlyFields.class, "booleanField"),
-                        Whitebox.getMethod(TestModelOnlyFields.class, "getBooleanField"),
-
-                        Whitebox.getField(TestModelOnlyFields.class, "byteArrayField"),
-                        Whitebox.getMethod(TestModelOnlyFields.class, "getByteArrayField"),
-
-                        Whitebox.getField(TestModelOnlyFields.class, "elementTypeField"),
-                        Whitebox.getMethod(TestModelOnlyFields.class, "getElementTypeField")));
 
         testMap.put(
-                (Class<?>) TestModelWithUnsupportedTypeAnnotated.class,
-                ImmutableMap.of(Whitebox.getField(TestModelWithUnsupportedTypeAnnotated.class, "shortField"),
-                        Whitebox.getMethod(TestModelWithUnsupportedTypeAnnotated.class, "getShortField"),
+                (Class<?>) TestModelWithGoodHashMap.class,
+                ImmutableMap.of(Whitebox.getField(TestModelWithGoodHashMap.class, "longField"),
+                        Whitebox.getMethod(TestModelWithGoodHashMap.class, "getLongField"),
 
-                        Whitebox.getField(TestModelWithUnsupportedTypeAnnotated.class, "shorts"),
-                        Whitebox.getMethod(TestModelWithUnsupportedTypeAnnotated.class, "getShorts")));
+                        Whitebox.getField(TestModelWithGoodHashMap.class, "stringField"),
+                        Whitebox.getMethod(TestModelWithGoodHashMap.class, "getStringField"),
+
+                        Whitebox.getField(TestModelWithGoodHashMap.class, "booleanField"),
+                        Whitebox.getMethod(TestModelWithGoodHashMap.class, "getBooleanField"),
+
+                        Whitebox.getField(TestModelWithGoodHashMap.class, "byteArrayField"),
+                        Whitebox.getMethod(TestModelWithGoodHashMap.class, "getByteArrayField"),
+
+                        Whitebox.getField(TestModelWithGoodHashMap.class, "elementTypeField"),
+                        Whitebox.getMethod(TestModelWithGoodHashMap.class, "getElementTypeField")));
 
         return testMap;
     }
@@ -260,7 +187,7 @@ public class HBaseEntityMapperUnitTest {
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
         assertFalse(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
-        assertEquals(7, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
+        assertEquals(3, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
                 .get((Class<?>) TestModel.class));
         assertEquals(9,
@@ -273,13 +200,13 @@ public class HBaseEntityMapperUnitTest {
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod");
         assertFalse(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
-        assertEquals(1, annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.size());
+        assertEquals(2, annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual
-                .get((Class<?>) TestModelWithGoodMap.class));
+                .get((Class<?>) TestModelWithOnlyGoodMap.class));
         assertEquals(
                 1,
                 annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.get(
-                        (Class<?>) TestModelWithGoodMap.class).size());
+                        (Class<?>) TestModelWithOnlyGoodMap.class).size());
     }
 
     @SuppressWarnings("unchecked")
@@ -440,6 +367,11 @@ public class HBaseEntityMapperUnitTest {
         assertEquals(testModelExpected, this.hBaseEntityMapper.objectFrom(result, TestModel.class));
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void objectFromUnsupportedTypeAnnotatedTest() throws Exception {
+        this.hBaseEntityMapper.objectFrom(result, TestModelWithUnsupportedTypeAnnotated.class);
+    }
+
     @Test
     public void objectFromNoResultsTest() throws Exception {
 
@@ -491,23 +423,41 @@ public class HBaseEntityMapperUnitTest {
         final NavigableMap<byte[], NavigableMap<byte[], byte[]>> columnFamilyResultMap = new TreeMap<byte[], NavigableMap<byte[], byte[]>>(
                 Bytes.BYTES_COMPARATOR);
 
-        columnFamilyResultMap
-                .put(Bytes.toBytes("OTHER_STUFF"),
-                        new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(
-                                Bytes.BYTES_COMPARATOR).put(Bytes.toBytes("longField"),
-                                Bytes.toBytes(testModelWithGoodMapExpected.getLongField())).build()));
+        columnFamilyResultMap.put(
+                Bytes.toBytes("MAP_STUFF"),
+                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
+                        Bytes.toBytes("testKey"), Bytes.toBytes("testValue")).build()));
+        columnFamilyResultMap.get(Bytes.toBytes("MAP_STUFF")).put(Bytes.toBytes("otherKey"),
+                Bytes.toBytes("otherValue"));
+
+        when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
+
+        assertEquals(testModelWithGoodMapExpected,
+                this.hBaseEntityMapper.objectFrom(result, TestModelWithOnlyGoodMap.class));
+    }
+
+    @Test
+    public void objectFromHashMapTest() throws Exception {
+        final NavigableMap<byte[], NavigableMap<byte[], byte[]>> columnFamilyResultMap = new TreeMap<byte[], NavigableMap<byte[], byte[]>>(
+                Bytes.BYTES_COMPARATOR);
+
+        columnFamilyResultMap.put(
+                Bytes.toBytes("OTHER_STUFF"),
+                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
+                        Bytes.toBytes("longField"), Bytes.toBytes(testModelWithGoodHashMapExpected.getLongField()))
+                        .build()));
         columnFamilyResultMap.put(
                 Bytes.toBytes("STUFF"),
                 new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
-                        Bytes.toBytes("stringField"), Bytes.toBytes(testModelWithGoodMapExpected.getStringField()))
+                        Bytes.toBytes("stringField"), Bytes.toBytes(testModelWithGoodHashMapExpected.getStringField()))
                         .build()));
         columnFamilyResultMap.put(
                 Bytes.toBytes("MORE_STUFF"),
                 new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
-                        Bytes.toBytes("booleanField"), Bytes.toBytes(testModelWithGoodMapExpected.getBooleanField()))
-                        .build()));
+                        Bytes.toBytes("booleanField"),
+                        Bytes.toBytes(testModelWithGoodHashMapExpected.getBooleanField())).build()));
         columnFamilyResultMap.get(Bytes.toBytes("OTHER_STUFF")).put(Bytes.toBytes("byteArrayField"),
-                testModelWithGoodMapExpected.getByteArrayField());
+                testModelWithGoodHashMapExpected.getByteArrayField());
 
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("elementTypeField"),
                 Bytes.toBytes(ElementType.ANNOTATION_TYPE.name()));
@@ -520,7 +470,8 @@ public class HBaseEntityMapperUnitTest {
 
         when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
 
-        assertEquals(testModelWithGoodMapExpected,
-                this.hBaseEntityMapper.objectFrom(result, TestModelWithGoodMap.class));
+        assertEquals(testModelWithGoodHashMapExpected,
+                this.hBaseEntityMapper.objectFrom(result, TestModelWithGoodHashMap.class));
     }
+
 }

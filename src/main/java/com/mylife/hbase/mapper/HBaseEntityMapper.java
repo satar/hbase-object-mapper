@@ -32,14 +32,17 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.TreeMap;
 
 import javax.mail.internet.ContentType;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.MasterNotRunningException;
@@ -68,7 +71,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -121,16 +123,13 @@ public class HBaseEntityMapper {
 
         this.hTablePool = hTablePool;
 
-        final Builder<Class<?>, AccessibleObject> annotatedClassToAnnotatedHBaseRowKeyBuilder = ImmutableMap.builder();
+        final Map<Class<?>, AccessibleObject> annotatedClassToAnnotatedHBaseRowKeyMap = new HashMap<Class<?>, AccessibleObject>();
 
-        final Builder<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
-                .builder();
+        final Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodMap = new HashMap<Class<?>, ImmutableMap<Field, Method>>();
 
-        final Builder<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
-                .builder();
+        final Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodMap = new HashMap<Class<?>, ImmutableMap<Field, Method>>();
 
-        final Builder<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodBuilder = ImmutableMap
-                .builder();
+        final Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodMap = new HashMap<Class<?>, ImmutableMap<Field, Method>>();
 
         scanner.addIncludeFilter(new AnnotationTypeFilter(HBasePersistance.class));
 
@@ -187,7 +186,60 @@ public class HBaseEntityMapper {
                     continue;
                 }
 
+                // for each class get the fields and the corresponding getter
+                Set<Field> hBaseFieldAnnotatedFieldsSet = Whitebox.getFieldsAnnotatedWith(
+                        Whitebox.newInstance(annotatedClass), HBaseField.class);
+
+                
+                if(CollectionUtils.exists(hBaseFieldAnnotatedFieldsSet, new org.apache.commons.collections.Predicate() {
+
+                    @Override
+                    public boolean evaluate(Object object) {
+
+                        return !TypeHandler.supports(((Field) object).getType());
+                    }
+                })){
+                    LOG.error("Unsupported type annotated with @HBaseField. Ignoring: " + annotatedClass);
+                    continue;
+                }
+
+                annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodMap.put(annotatedClass,
+                        fieldsToGetterMap(annotatedClass, ImmutableSet.copyOf(hBaseFieldAnnotatedFieldsSet)));
+
+                annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodMap.put(
+                        annotatedClass,
+                        fieldsToGetterMap(
+                                annotatedClass,
+                                ImmutableSet.copyOf(Whitebox.getFieldsAnnotatedWith(
+                                        Whitebox.newInstance(annotatedClass), HBaseObjectField.class))));
+
+                final Set<Field> hBaseMapFieldAnnotatedFieldsSet = Whitebox.getFieldsAnnotatedWith(
+                        Whitebox.newInstance(annotatedClass), HBaseMapField.class);
+
+                if (hBaseMapFieldAnnotatedFieldsSet.size() > 1) {
+                    LOG.error("@HBaseMapField can only be used on one field per class. Ignoring: " + annotatedClass);
+                    continue;
+                }
+                final Iterator<Field> hBaseMapFieldsIterator = hBaseMapFieldAnnotatedFieldsSet.iterator();
+                if (hBaseMapFieldsIterator.hasNext()) {
+                    final Field field = hBaseMapFieldsIterator.next();
+                    final Type[] types = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
+
+                    if (!Map.class.isAssignableFrom(field.getType()) || !String.class.equals((Class<?>) types[0])
+                            || !String.class.equals((Class<?>) types[1])) {
+                        LOG.error("@HBaseMapField can only be used on fields assignable from java.util.Map<String, String>. Ignoring: "
+                                + annotatedClass);
+                        continue;
+                    }
+                    annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodMap.put(annotatedClass,
+                            fieldsToGetterMap(annotatedClass, ImmutableSet.copyOf(hBaseMapFieldAnnotatedFieldsSet)));
+
+                }
+
                 // figure out which method or field to use as the HBaseRowKey
+                // this has to be at the end since @HBaseRowKey is required in
+                // the class we can use this to key the other maps we are
+                // collecting
                 final Set<Field> hBaseRowKeyFields = Whitebox.getFieldsAnnotatedWith(
                         Whitebox.newInstance(annotatedClass), HBaseRowKey.class);
                 if (hBaseRowKeyFields.size() > 1) {
@@ -218,67 +270,38 @@ public class HBaseEntityMapper {
                         LOG.error("@HBaseRowKey can only be used on a no arguemnt method. Ignoring: " + annotatedClass);
                         continue;
                     }
-                    annotatedClassToAnnotatedHBaseRowKeyBuilder.put(annotatedClass, hBaseRowKeyMethod);
+                    annotatedClassToAnnotatedHBaseRowKeyMap.put(annotatedClass, hBaseRowKeyMethod);
                 } else {
-                    annotatedClassToAnnotatedHBaseRowKeyBuilder
-                            .put(annotatedClass, hBaseRowKeyFields.iterator().next());
+                    annotatedClassToAnnotatedHBaseRowKeyMap.put(annotatedClass, hBaseRowKeyFields.iterator().next());
                 }
-
-                // for each class get the fields and the corresponding getter
-                annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodBuilder.put(
-                        annotatedClass,
-                        fieldsToGetterMap(
-                                annotatedClass,
-                                ImmutableSet.copyOf(Whitebox.getFieldsAnnotatedWith(
-                                        Whitebox.newInstance(annotatedClass), HBaseField.class))));
-
-                annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodBuilder.put(
-                        annotatedClass,
-                        fieldsToGetterMap(
-                                annotatedClass,
-                                ImmutableSet.copyOf(Whitebox.getFieldsAnnotatedWith(
-                                        Whitebox.newInstance(annotatedClass), HBaseObjectField.class))));
-
-                final Set<Field> hBaseMapFields = Whitebox.getFieldsAnnotatedWith(Whitebox.newInstance(annotatedClass),
-                        HBaseMapField.class);
-
-                if (hBaseMapFields.size() > 1) {
-                    LOG.error("@HBaseMapField can only be used on one field per class. Ignoring: " + annotatedClass);
-                    continue;
-                }
-                final Iterator<Field> hBaseMapFieldsIterator = hBaseMapFields.iterator();
-                if (!hBaseMapFieldsIterator.hasNext()) {
-                    continue;
-                }
-                final Field field = hBaseMapFieldsIterator.next();
-                final Type[] types = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
-
-                if (!Map.class.isAssignableFrom(field.getType()) || !String.class.equals((Class<?>) types[0])
-                        || !String.class.equals((Class<?>) types[1])) {
-                    LOG.error("@HBaseMapField can only be used on fields assignable from java.util.Map<String, String>. Ignoring: "
-                            + annotatedClass);
-                    continue;
-                }
-                annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodBuilder.put(annotatedClass,
-                        fieldsToGetterMap(annotatedClass, ImmutableSet.copyOf(hBaseMapFields)));
             }
         }
 
-        this.annotatedClassToAnnotatedHBaseRowKey = annotatedClassToAnnotatedHBaseRowKeyBuilder.build();
+        // clean up
+        // keep only the valid classed in our maps
+        annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodMap.keySet().retainAll(
+                annotatedClassToAnnotatedHBaseRowKeyMap.keySet());
+        annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodMap.keySet().retainAll(
+                annotatedClassToAnnotatedHBaseRowKeyMap.keySet());
+        annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodMap.keySet().retainAll(
+                annotatedClassToAnnotatedHBaseRowKeyMap.keySet());
 
-        this.annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod = annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodBuilder
-                .build();
-
-        this.annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod = annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodBuilder
-                .build();
-
-        this.annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod = annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodBuilder
-                .build();
+        // set our state
+        this.annotatedClassToAnnotatedHBaseRowKey = ImmutableMap.copyOf(annotatedClassToAnnotatedHBaseRowKeyMap);
+        this.annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod = ImmutableMap
+                .copyOf(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodMap);
+        this.annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod = ImmutableMap
+                .copyOf(annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethodMap);
+        this.annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod = ImmutableMap
+                .copyOf(annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodMap);
 
     }
 
-    public void save(final Object hbasePersistableObject) throws Exception {
-        // TODO verify that object is hbasePersistableObject!
+    public void save(final Object hbasePersistableObject) throws IllegalArgumentException, Exception {
+        if (!annotatedClassToAnnotatedHBaseRowKey.containsKey(hbasePersistableObject.getClass())) {
+            throw new IllegalArgumentException(
+                    "Object passed to save(final Object hbasePersistableObject) must be of a correct HBase persistable class! If this class is annotaed with @HBasePersistance please see startup errors for why it might have been excluded. ");
+        }
         final HTableInterface hTable = hTablePool.getTable(hbasePersistableObject.getClass()
                 .getAnnotation(HBasePersistance.class).tableName());
         try {
@@ -291,6 +314,10 @@ public class HBaseEntityMapper {
     @SuppressWarnings("unchecked")
     public <T extends Object> T objectFrom(final Result result, final Class<T> hBasePersistanceClass) {
         // TODO verify that class is hBasePersistanceClass!
+        if (!annotatedClassToAnnotatedHBaseRowKey.containsKey(hBasePersistanceClass)) {
+            throw new IllegalArgumentException(
+                    "Class passed to objectFrom(final Result result, final Class<T> hBasePersistanceClass) must be a correct HBase persistable class! If this class is annotaed with @HBasePersistance please see startup errors for why it might have been excluded. ");
+        }
         if (result.isEmpty()) {
             return null;
         }
@@ -330,12 +357,20 @@ public class HBaseEntityMapper {
                 final Field field = annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod
                         .get(hBasePersistanceClass).keySet().iterator().next();
                 Map<String, String> map;
-                try {
-                    map = (Map<String, String>) Whitebox.getConstructor(field.getType()).newInstance((Object[])null);
-                } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                        | InvocationTargetException e) {
-                    LOG.error("Could not create new instance of map.", e);
-                    break mapFieldBlock;
+                if (field.getType().equals(Map.class)) {
+                    // If the object just calls for a Map give them a TreeMap();
+                    map = new TreeMap<String, String>();
+                } else {
+                    // else try to create an instance of the Map class they are
+                    // using
+                    try {
+                        map = (Map<String, String>) Whitebox.getConstructor(field.getType()).newInstance(
+                                (Object[]) null);
+                    } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+                            | InvocationTargetException e) {
+                        LOG.error("Could not create new instance of map.", e);
+                        break mapFieldBlock;
+                    }
                 }
                 for (final Entry<byte[], byte[]> entry : columnFamilyResultMap.get(
                         columnFamilyNameFromHBaseMapFieldAnnotatedField(field)).entrySet()) {
