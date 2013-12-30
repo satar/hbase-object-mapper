@@ -47,7 +47,23 @@ public final class TypeHandler {
     private TypeHandler() {
         super();
     }
-
+    /**
+     * 
+     * @param type
+     * @return returns turn if the given type is currently supported
+     */
+    public static boolean supports(@SuppressWarnings("rawtypes") final Class type){
+        if (type == Boolean.class || type.isEnum()){
+            return true;
+        }
+        try{
+            getTypedValue(type, new byte[]{1,2,3,4,5,6,7,8});
+            return true;
+        }catch(IllegalArgumentException e){
+            return false;
+        }
+    }
+    
     @SuppressWarnings("unchecked")
     public static <T> T getTypedValue(@SuppressWarnings("rawtypes") final Class type, final byte[] value) {
         if (value == null) {
