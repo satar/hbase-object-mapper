@@ -24,9 +24,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Somewhat extensible type mappings
+ * type mappings
  * 
- * @author
+ * @author Mike E
  */
 
 public final class TypeHandler {
