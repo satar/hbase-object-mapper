@@ -21,12 +21,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.esotericsoftware.kryo.Kryo;
+
 /**
- * Marker annotation to show that this field should decomposed into its 
- * constituent parts flattened into Map and stored in HBase with individual qualifiers.
+ * Marker annotation to show that this field should serialized and stored in HBase as a blob.
  * 
- * This flattening into a Map is done via {@link [org.springframework.integration.transformer.]ObjectToMapTransformer}
- * the inflating in done via {{@link [org.springframework.integration.transformer.]MapToObjectTransformer}}
+ * This serialization/de-serialization is done via {@link Kryo}
+ * with {@link Kryo#setDefaultSerializer() } to set {@link CompatibleFieldSerializer}
  * @author MikeE
  */
 @Target(ElementType.FIELD)
