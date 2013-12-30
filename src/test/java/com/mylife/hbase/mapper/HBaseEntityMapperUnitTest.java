@@ -25,6 +25,8 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+import java.awt.Point;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
@@ -44,6 +46,7 @@ import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.iq80.snappy.SnappyOutputStream;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +59,9 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
@@ -95,8 +101,11 @@ public class HBaseEntityMapperUnitTest {
 
     private final TestModelWithOnlyGoodMap testModelWithGoodMapExpected = new TestModelWithOnlyGoodMap(ImmutableMap.of(
             "testKey", "testValue", "otherKey", "otherValue"));
+
+    private final Point point = new Point(-1, 1);
+
     private final TestModelWithGoodHashMap testModelWithGoodHashMapExpected = new TestModelWithGoodHashMap(1l, "2",
-            false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, new HashMap<String, String>(ImmutableMap.of(
+            false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, point, new HashMap<String, String>(ImmutableMap.of(
                     "testKey", "testValue", "otherKey", "otherValue")));
 
     private final TestModelWithUnsupportedTypeAnnotated testModelWithUnsupportedTypeAnnotated = new TestModelWithUnsupportedTypeAnnotated(
@@ -322,7 +331,7 @@ public class HBaseEntityMapperUnitTest {
 
         when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
                 hTableInterface);
-        this.hBaseEntityMapper.save(testModelWithGoodMapExpected);
+        this.hBaseEntityMapper.save(testModelWithGoodHashMapExpected);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -458,6 +467,7 @@ public class HBaseEntityMapperUnitTest {
                         Bytes.toBytes(testModelWithGoodHashMapExpected.getBooleanField())).build()));
         columnFamilyResultMap.get(Bytes.toBytes("OTHER_STUFF")).put(Bytes.toBytes("byteArrayField"),
                 testModelWithGoodHashMapExpected.getByteArrayField());
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("point"), kyroOutput(point));
 
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("elementTypeField"),
                 Bytes.toBytes(ElementType.ANNOTATION_TYPE.name()));
@@ -474,4 +484,13 @@ public class HBaseEntityMapperUnitTest {
                 this.hBaseEntityMapper.objectFrom(result, TestModelWithGoodHashMap.class));
     }
 
+    private byte[] kyroOutput(Object object) throws Exception {
+        final Kryo kryo = new Kryo();
+        kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        final Output output = new Output(new SnappyOutputStream(byteArrayOutputStream));
+        kryo.writeObject(output, object);
+        output.close();
+        return byteArrayOutputStream.toByteArray();
+    }
 }

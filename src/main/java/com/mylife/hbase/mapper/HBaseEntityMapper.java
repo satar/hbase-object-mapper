@@ -335,7 +335,6 @@ public class HBaseEntityMapper {
                                     Bytes.toBytes(field.getName()))));
         }
 
-        // TODO add support for new @HBaseObjectField
         for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
                 hBasePersistanceClass).keySet()) {
             ReflectionUtils.makeAccessible(field);
@@ -346,7 +345,7 @@ public class HBaseEntityMapper {
 
                         getKryo().readObject(
                                 new Input(new SnappyInputStream(new ByteArrayInputStream(columnFamilyResultMap.get(
-                                        columnFamilyNameFromHBaseFieldAnnotatedField(field)).remove(
+                                        columnFamilyNameFromHBaseObjectFieldAnnotatedField(field)).remove(
                                         Bytes.toBytes(field.getName()))))), field.getType()));
             } catch (IOException e) {
                 LOG.error("Could not deserialize " + field.getName(), e);
@@ -428,7 +427,6 @@ public class HBaseEntityMapper {
                                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod)));
             }
         }
-        // TODO add support for new @HBaseObjectField
         if (annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(hbasePersistableObject
                 .getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
