@@ -16,35 +16,30 @@
 
 package com.mylife.hbase.mapper.model;
 
-import java.util.Map;
+import java.awt.Point;
 
-import com.mylife.hbase.mapper.annotation.HBaseMapField;
+import com.mylife.hbase.mapper.annotation.HBaseObjectField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with only a good map backing object
+ * A test POJO with only a {@link @HBaseObjectField} annotated field
  * 
  * @author Mike E
  */
 
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
-public class TestModelWithOnlyGoodMap {
+public class TestModelWithOnlyObjectFields {
 
-    @HBaseMapField
-    private Map<String, String> goodMap;
+    @HBaseObjectField
+    private Point point;
 
-    public Map<String, String> getGoodMap() {
-        return goodMap;
+    public Point getPoint() {
+        return point;
     }
 
-    public void setGoodMap(Map<String, String> goodMap) {
-        this.goodMap = goodMap;
-    }
-
-    @Override
-    public String toString() {
-        return "TestModelWithGoodMap [goodMap=" + goodMap + "]";
+    public void setPoint(Point point) {
+        this.point = point;
     }
 
     @HBaseRowKey
@@ -52,7 +47,7 @@ public class TestModelWithOnlyGoodMap {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((goodMap == null) ? 0 : goodMap.hashCode());
+        result = prime * result + ((point == null) ? 0 : point.hashCode());
         return result;
     }
 
@@ -64,18 +59,19 @@ public class TestModelWithOnlyGoodMap {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        TestModelWithOnlyGoodMap other = (TestModelWithOnlyGoodMap) obj;
-        if (goodMap == null) {
-            if (other.goodMap != null)
+        TestModelWithOnlyObjectFields other = (TestModelWithOnlyObjectFields) obj;
+        if (point == null) {
+            if (other.point != null)
                 return false;
-        } else if (!goodMap.equals(other.goodMap))
+        } else if (!point.equals(other.point))
             return false;
         return true;
     }
 
-    public TestModelWithOnlyGoodMap(Map<String, String> goodMap) {
+    public TestModelWithOnlyObjectFields(Point point) {
         super();
-        this.goodMap = goodMap;
+        this.point = point;
     }
 
+    
 }

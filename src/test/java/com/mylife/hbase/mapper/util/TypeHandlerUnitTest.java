@@ -32,10 +32,10 @@ import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 /**
- * Description here!
+ * stand alone unit test for the type converter
  * 
  * 
- * @author
+ * @author Mike E
  */
 
 public class TypeHandlerUnitTest {

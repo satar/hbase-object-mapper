@@ -14,29 +14,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.mylife.hbase.mapper.model;
+package com.mylife.hbase.mapper.serialization.kryo;
 
-import com.mylife.hbase.mapper.annotation.HBaseField;
-import com.mylife.hbase.mapper.annotation.HBasePersistance;
+import static org.junit.Assert.assertEquals;
+
+import java.awt.Point;
+
+import org.junit.Test;
+
 
 /**
- * A test POJO with no @HBaseRowKey
+ * unit test for the KryoSerialization
+ * 
  * 
  * @author Mike E
  */
 
-@HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
-public class TestModelNoRowKey {
+public class KryoSerializerUnitTest {
 
-    @HBaseField
-    private Long longField;
-
-    public Long getLongField() {
-        return longField;
-    }
-
-    public void setLongField(Long longField) {
-        this.longField = longField;
-    }
-
+    private final Point pointExcepted = new Point(-1, -1);
+    
+  @Test
+  public void testSerialzationDeserialiationLifeCycle() throws Exception{
+      KryoSerializer kryoSerializer = new KryoSerializer();
+      assertEquals(pointExcepted,kryoSerializer.deserialize(kryoSerializer.serialize(pointExcepted), Point.class)); 
+  }
+    
 }

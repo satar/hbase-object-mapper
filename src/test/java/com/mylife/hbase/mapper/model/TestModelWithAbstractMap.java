@@ -16,47 +16,42 @@
 
 package com.mylife.hbase.mapper.model;
 
-import java.awt.Point;
-import java.lang.annotation.ElementType;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
+
+import javax.mail.internet.ContentType;
 
 import com.mylife.hbase.mapper.annotation.HBaseField;
 import com.mylife.hbase.mapper.annotation.HBaseMapField;
-import com.mylife.hbase.mapper.annotation.HBaseObjectField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with some valid types and a good map backing object
+ * A test POJO with unsupported map value type with @HBaseMapField
  * 
  * @author Mike E
  */
 
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
-public class TestModelWithGoodHashMap {
+public class TestModelWithAbstractMap {
 
-    @HBaseField(columnFamilyName = "OTHER_STUFF")
-    @HBaseRowKey
+    @HBaseField
     private Long longField;
 
     @HBaseField
     private String stringField;
 
-    @HBaseField(columnFamilyName = "MORE_STUFF")
+    @HBaseField
     private Boolean booleanField;
 
-    @HBaseField(columnFamilyName = "OTHER_STUFF")
-    private byte[] byteArrayField;
-
     @HBaseField
-    private ElementType elementTypeField;
-
-    @HBaseObjectField(columnFamilyName="OBJECT_STUFF")
-    private Point point;
-
-    @HBaseMapField(columnFamilyName = "MAP_STUFF")
-    private HashMap<String, String> goodMap;
+    private byte[] byteArrayField;
+    
+    @HBaseField
+    private ContentType contentTypeField;
+    
+    @HBaseMapField
+    private BadMap<String, String> badMap;
 
     public Long getLongField() {
         return longField;
@@ -90,47 +85,32 @@ public class TestModelWithGoodHashMap {
         this.byteArrayField = byteArrayField;
     }
 
-    public ElementType getElementTypeField() {
-        return elementTypeField;
+    public ContentType getContentTypeField() {
+        return contentTypeField;
     }
 
-    public void setElementTypeField(ElementType elementTypeField) {
-        this.elementTypeField = elementTypeField;
+    public void setContentTypeField(ContentType contentTypeField) {
+        this.contentTypeField = contentTypeField;
     }
 
-    public Point getPoint() {
-        return point;
+    public BadMap<String, String> getBadMap() {
+        return badMap;
     }
 
-    public void setPoint(Point point) {
-        this.point = point;
-    }
-
-    public HashMap<String, String> getGoodMap() {
-        return goodMap;
-    }
-
-    public void setGoodMap(HashMap<String, String> goodMap) {
-        this.goodMap = goodMap;
+    public void setBadMap(BadMap<String, String> badMap) {
+        this.badMap = badMap;
     }
 
     @Override
-    public String toString() {
-        return "TestModelWithGoodHashMap [longField=" + longField + ", stringField=" + stringField + ", booleanField="
-                + booleanField + ", byteArrayField=" + Arrays.toString(byteArrayField) + ", elementTypeField="
-                + elementTypeField + ", point=" + point + ", goodMap=" + goodMap + "]";
-    }
-
-    @Override
+    @HBaseRowKey
     public int hashCode() {
         final int prime = 31;
         int result = 1;
         result = prime * result + ((booleanField == null) ? 0 : booleanField.hashCode());
         result = prime * result + Arrays.hashCode(byteArrayField);
-        result = prime * result + ((elementTypeField == null) ? 0 : elementTypeField.hashCode());
-        result = prime * result + ((goodMap == null) ? 0 : goodMap.hashCode());
+        result = prime * result + ((contentTypeField == null) ? 0 : contentTypeField.hashCode());
+        result = prime * result + ((badMap == null) ? 0 : badMap.hashCode());
         result = prime * result + ((longField == null) ? 0 : longField.hashCode());
-        result = prime * result + ((point == null) ? 0 : point.hashCode());
         result = prime * result + ((stringField == null) ? 0 : stringField.hashCode());
         return result;
     }
@@ -143,7 +123,7 @@ public class TestModelWithGoodHashMap {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        TestModelWithGoodHashMap other = (TestModelWithGoodHashMap) obj;
+        TestModelWithAbstractMap other = (TestModelWithAbstractMap) obj;
         if (booleanField == null) {
             if (other.booleanField != null)
                 return false;
@@ -151,22 +131,20 @@ public class TestModelWithGoodHashMap {
             return false;
         if (!Arrays.equals(byteArrayField, other.byteArrayField))
             return false;
-        if (elementTypeField != other.elementTypeField)
-            return false;
-        if (goodMap == null) {
-            if (other.goodMap != null)
+        if (contentTypeField == null) {
+            if (other.contentTypeField != null)
                 return false;
-        } else if (!goodMap.equals(other.goodMap))
+        } else if (!contentTypeField.equals(other.contentTypeField))
+            return false;
+        if (badMap == null) {
+            if (other.badMap != null)
+                return false;
+        } else if (!badMap.equals(other.badMap))
             return false;
         if (longField == null) {
             if (other.longField != null)
                 return false;
         } else if (!longField.equals(other.longField))
-            return false;
-        if (point == null) {
-            if (other.point != null)
-                return false;
-        } else if (!point.equals(other.point))
             return false;
         if (stringField == null) {
             if (other.stringField != null)
@@ -176,16 +154,29 @@ public class TestModelWithGoodHashMap {
         return true;
     }
 
-    public TestModelWithGoodHashMap(Long longField, String stringField, Boolean booleanField, byte[] byteArrayField,
-            ElementType elementTypeField, Point point, HashMap<String, String> goodMap) {
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("TestModelWithGoodMap [longField=").append(longField).append(", stringField=")
+                .append(stringField).append(", booleanField=").append(booleanField).append(", byteArrayField=")
+                .append(Arrays.toString(byteArrayField)).append(", contentTypeField=").append(contentTypeField)
+                .append(", badMap=").append(badMap).append("]");
+        return builder.toString();
+    }
+
+    public TestModelWithAbstractMap(Long longField, String stringField, Boolean booleanField, byte[] byteArrayField,
+            ContentType contentTypeField, BadMap<String, String> badMap) {
         super();
         this.longField = longField;
         this.stringField = stringField;
         this.booleanField = booleanField;
         this.byteArrayField = byteArrayField;
-        this.elementTypeField = elementTypeField;
-        this.point = point;
-        this.goodMap = goodMap;
+        this.contentTypeField = contentTypeField;
+        this.badMap = badMap;
     }
 
+    private abstract class BadMap<K,V> implements Map<K, V> {
+        
+    }
+    
 }

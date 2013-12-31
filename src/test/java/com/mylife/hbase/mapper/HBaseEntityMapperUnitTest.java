@@ -70,6 +70,7 @@ import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.model.TestModel;
 import com.mylife.hbase.mapper.model.TestModelWithGoodHashMap;
 import com.mylife.hbase.mapper.model.TestModelWithOnlyGoodMap;
+import com.mylife.hbase.mapper.model.TestModelWithOnlyObjectFields;
 import com.mylife.hbase.mapper.model.TestModelWithUnsupportedTypeAnnotated;
 import com.mylife.hbase.mapper.util.TypeHandler;
 
@@ -111,6 +112,12 @@ public class HBaseEntityMapperUnitTest {
     private final TestModelWithUnsupportedTypeAnnotated testModelWithUnsupportedTypeAnnotated = new TestModelWithUnsupportedTypeAnnotated(
             (short) 0, ImmutableList.of((short) 1, (short) 2));
 
+    private final TestModelWithOnlyGoodMap testModelWithOnlyGoodMapExpected = new TestModelWithOnlyGoodMap(
+            ImmutableMap.of("", "Hi!"));
+
+    private final TestModelWithOnlyObjectFields testModelWithOnlyObjectFieldsExpected = new TestModelWithOnlyObjectFields(
+            point);
+
     private final static Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected = BUILD_TEST_MAP();
 
     private static Map<Class<?>, ImmutableMap<Field, Method>> BUILD_TEST_MAP() {
@@ -119,8 +126,9 @@ public class HBaseEntityMapperUnitTest {
 
         Builder<Field, Method> builder = ImmutableMap.builder();
 
-        // empty map
+        // empty maps
         testMap.put((Class<?>) TestModelWithOnlyGoodMap.class, builder.build());
+        testMap.put((Class<?>) TestModelWithOnlyObjectFields.class, builder.build());
 
         builder.put(Whitebox.getField(TestModel.class, "longField"),
                 Whitebox.getMethod(TestModel.class, "getLongField"));
@@ -196,7 +204,7 @@ public class HBaseEntityMapperUnitTest {
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
         assertFalse(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.isEmpty());
-        assertEquals(3, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
+        assertEquals(4, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
                 .get((Class<?>) TestModel.class));
         assertEquals(9,
@@ -216,6 +224,8 @@ public class HBaseEntityMapperUnitTest {
                 1,
                 annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethodActual.get(
                         (Class<?>) TestModelWithOnlyGoodMap.class).size());
+        assertNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
+                .get((Class<?>) TestModelWithUnsupportedTypeAnnotated.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -334,6 +344,22 @@ public class HBaseEntityMapperUnitTest {
         this.hBaseEntityMapper.save(testModelWithGoodHashMapExpected);
     }
 
+    @Test
+    public void saveOnlyMapTest() throws Exception {
+
+        when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
+                hTableInterface);
+        this.hBaseEntityMapper.save(testModelWithOnlyGoodMapExpected);
+    }
+
+    @Test
+    public void saveOnlyObjectFieldTest() throws Exception {
+
+        when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
+                hTableInterface);
+        this.hBaseEntityMapper.save(testModelWithOnlyObjectFieldsExpected);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void saveUnsupportedTypeTest() throws Exception {
 
@@ -433,11 +459,10 @@ public class HBaseEntityMapperUnitTest {
                 Bytes.BYTES_COMPARATOR);
 
         columnFamilyResultMap.put(
-                Bytes.toBytes("MAP_STUFF"),
+                Bytes.toBytes("STUFF"),
                 new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
                         Bytes.toBytes("testKey"), Bytes.toBytes("testValue")).build()));
-        columnFamilyResultMap.get(Bytes.toBytes("MAP_STUFF")).put(Bytes.toBytes("otherKey"),
-                Bytes.toBytes("otherValue"));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("otherKey"), Bytes.toBytes("otherValue"));
 
         when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
 
@@ -467,7 +492,10 @@ public class HBaseEntityMapperUnitTest {
                         Bytes.toBytes(testModelWithGoodHashMapExpected.getBooleanField())).build()));
         columnFamilyResultMap.get(Bytes.toBytes("OTHER_STUFF")).put(Bytes.toBytes("byteArrayField"),
                 testModelWithGoodHashMapExpected.getByteArrayField());
-        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("point"), kyroOutput(point));
+        columnFamilyResultMap.put(
+                Bytes.toBytes("OBJECT_STUFF"),
+                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
+                        Bytes.toBytes("point"), kyroOutput(testModelWithGoodHashMapExpected.getPoint())).build()));
 
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("elementTypeField"),
                 Bytes.toBytes(ElementType.ANNOTATION_TYPE.name()));
@@ -482,6 +510,11 @@ public class HBaseEntityMapperUnitTest {
 
         assertEquals(testModelWithGoodHashMapExpected,
                 this.hBaseEntityMapper.objectFrom(result, TestModelWithGoodHashMap.class));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testToBytesException() throws Exception {
+        Whitebox.invokeMethod(this.hBaseEntityMapper, "toBytes", point);
     }
 
     private byte[] kyroOutput(Object object) throws Exception {
