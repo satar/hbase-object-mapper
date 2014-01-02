@@ -30,6 +30,14 @@ import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
 
 public class KryoSerializer implements HBaseObjectSerializer {
 
+    private KryoSerializer(){
+        
+    }
+    
+    public static KryoSerializer newInstance(){
+        return new KryoSerializer();
+    }
+    
     @Override
     public byte[] serialize(Object object) throws IOException {
         final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();

@@ -16,6 +16,7 @@
 
 package com.mylife.hbase.mapper.model;
 
+import com.mylife.hbase.mapper.SerializationStategy;
 import com.mylife.hbase.mapper.annotation.HBaseObjectField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
@@ -29,7 +30,7 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
 public class TestModelWithOnlyObjectFields {
 
-    @HBaseObjectField
+    @HBaseObjectField(serializationStategy=SerializationStategy.JSON)
     private LabeledPoint labeledPoint;
 
     public LabeledPoint getLabeledPoint() {

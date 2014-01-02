@@ -35,7 +35,7 @@ public class KryoSerializerUnitTest {
 
     @Test
     public void testSerialzationDeserialiationLifeCycle() throws Exception {
-        KryoSerializer kryoSerializer = new KryoSerializer();
+        KryoSerializer kryoSerializer = KryoSerializer.newInstance();
         assertEquals(labeledPointExcepted,
                 kryoSerializer.deserialize(kryoSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
     }

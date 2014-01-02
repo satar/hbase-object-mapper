@@ -35,7 +35,7 @@ public class JsonSerializerUnitTest {
 
     @Test
     public void testSerialzationDeserialiationLifeCycle() throws Exception {
-        JsonSerializer jsonSerializer = new JsonSerializer();
+        JsonSerializer jsonSerializer = JsonSerializer.newInstance();
         assertEquals(labeledPointExcepted, jsonSerializer.deserialize(jsonSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
     }
 

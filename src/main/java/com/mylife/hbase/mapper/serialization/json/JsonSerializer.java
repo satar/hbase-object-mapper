@@ -22,17 +22,25 @@ import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
 
 public class JsonSerializer implements HBaseObjectSerializer {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    
+    private JsonSerializer(){
+        
+    }
+    
+    public static final JsonSerializer newInstance(){
+        return new JsonSerializer();
+    }
 
     @Override
     public byte[] serialize(final Object object) throws IOException {
 
-        return objectMapper.writeValueAsBytes(object);
+        return OBJECT_MAPPER.writeValueAsBytes(object);
     }
 
     @Override
     public <T> T deserialize(final byte[] byteArray, final Class<T> type) throws IOException {
-        return objectMapper.readValue(byteArray, type);
+        return OBJECT_MAPPER.readValue(byteArray, type);
     }
 
 }

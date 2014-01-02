@@ -72,8 +72,6 @@ import com.mylife.hbase.mapper.annotation.HBaseMapField;
 import com.mylife.hbase.mapper.annotation.HBaseObjectField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
-import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
-import com.mylife.hbase.mapper.serialization.kryo.KryoSerializer;
 import com.mylife.hbase.mapper.util.TypeHandler;
 
 /**
@@ -86,8 +84,6 @@ import com.mylife.hbase.mapper.util.TypeHandler;
 public class HBaseEntityMapper {
 
     private static final transient Logger LOG = Logger.getLogger(HBaseEntityMapper.class);
-
-    private final HBaseObjectSerializer hBaseObjectSerializer = new KryoSerializer();
 
     private final HTablePool hTablePool;
 
@@ -335,14 +331,14 @@ public class HBaseEntityMapper {
                 hBasePersistanceClass).keySet()) {
             ReflectionUtils.makeAccessible(field);
             try {
-                ReflectionUtils.setField(field, type, hBaseObjectSerializer.deserialize(
+                ReflectionUtils.setField(field, type, field.getAnnotation(HBaseObjectField.class).serializationStategy().deserialize(
                         columnFamilyResultMap.get(columnFamilyNameFromHBaseObjectFieldAnnotatedField(field)).remove(
                                 Bytes.toBytes(field.getName())), field.getType()));
             } catch (IOException e) {
                 //We serialized this we should be able to de-serialize it.
                 //Did the serialization change?
                 //TODO: store serialization type so we can better guarantee de-serialization
-                LOG.error("Could not deserialize " + field.getName() + "Did the serialization type change? from when you serialized the object?", e);
+                LOG.error("Could not deserialize " + field.getName() + "Did the serialization type change from when you serialized the object?", e);
             }
         }
         mapFieldBlock: {
@@ -427,7 +423,7 @@ public class HBaseEntityMapper {
             for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
                     hbasePersistableObject.getClass()).keySet()) {
                 puts.add(buildPut(columnFamilyNameFromHBaseObjectFieldAnnotatedField(field), rowKey, field.getName(),
-                        hBaseObjectSerializer.serialize(fieldValue(field, hbasePersistableObject,
+                        field.getAnnotation(HBaseObjectField.class).serializationStategy().serialize(fieldValue(field, hbasePersistableObject,
                                 annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod))));
             }
         }

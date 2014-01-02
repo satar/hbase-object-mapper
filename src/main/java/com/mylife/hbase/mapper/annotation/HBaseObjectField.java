@@ -22,6 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.mylife.hbase.mapper.SerializationStategy;
 
 /**
  * Marker annotation to show that this field should serialized and stored in HBase as a blob.
@@ -34,4 +35,5 @@ import com.esotericsoftware.kryo.Kryo;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface HBaseObjectField {
     String columnFamilyName() default "";
+    SerializationStategy serializationStategy() default SerializationStategy.KRYO;
 }
