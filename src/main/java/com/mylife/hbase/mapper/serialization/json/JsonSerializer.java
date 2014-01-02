@@ -13,31 +13,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+package com.mylife.hbase.mapper.serialization.json;
 
-package com.mylife.hbase.mapper.serialization.kryo;
+import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
 
-import org.junit.Test;
+public class JsonSerializer implements HBaseObjectSerializer {
 
-import com.mylife.hbase.mapper.model.LabeledPoint;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-/**
- * unit test for the KryoSerialization
- * 
- * 
- * @author Mike E
- */
+    @Override
+    public byte[] serialize(final Object object) throws IOException {
 
-public class KryoSerializerUnitTest {
+        return objectMapper.writeValueAsBytes(object);
+    }
 
-    private final LabeledPoint labeledPointExcepted = new LabeledPoint("Label", -1, -1);
-
-    @Test
-    public void testSerialzationDeserialiationLifeCycle() throws Exception {
-        KryoSerializer kryoSerializer = new KryoSerializer();
-        assertEquals(labeledPointExcepted,
-                kryoSerializer.deserialize(kryoSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
+    @Override
+    public <T> T deserialize(final byte[] byteArray, final Class<T> type) throws IOException {
+        return objectMapper.readValue(byteArray, type);
     }
 
 }

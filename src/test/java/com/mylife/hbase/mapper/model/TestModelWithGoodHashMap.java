@@ -16,7 +16,6 @@
 
 package com.mylife.hbase.mapper.model;
 
-import java.awt.Point;
 import java.lang.annotation.ElementType;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -52,8 +51,8 @@ public class TestModelWithGoodHashMap {
     @HBaseField
     private ElementType elementTypeField;
 
-    @HBaseObjectField(columnFamilyName="OBJECT_STUFF")
-    private Point point;
+    @HBaseObjectField(columnFamilyName = "OBJECT_STUFF")
+    private LabeledPoint labeledPoint;
 
     @HBaseMapField(columnFamilyName = "MAP_STUFF")
     private HashMap<String, String> goodMap;
@@ -98,12 +97,12 @@ public class TestModelWithGoodHashMap {
         this.elementTypeField = elementTypeField;
     }
 
-    public Point getPoint() {
-        return point;
+    public LabeledPoint getLabeledPoint() {
+        return labeledPoint;
     }
 
-    public void setPoint(Point point) {
-        this.point = point;
+    public void setLabeledPoint(LabeledPoint labeledPoint) {
+        this.labeledPoint = labeledPoint;
     }
 
     public HashMap<String, String> getGoodMap() {
@@ -115,13 +114,6 @@ public class TestModelWithGoodHashMap {
     }
 
     @Override
-    public String toString() {
-        return "TestModelWithGoodHashMap [longField=" + longField + ", stringField=" + stringField + ", booleanField="
-                + booleanField + ", byteArrayField=" + Arrays.toString(byteArrayField) + ", elementTypeField="
-                + elementTypeField + ", point=" + point + ", goodMap=" + goodMap + "]";
-    }
-
-    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
@@ -129,8 +121,8 @@ public class TestModelWithGoodHashMap {
         result = prime * result + Arrays.hashCode(byteArrayField);
         result = prime * result + ((elementTypeField == null) ? 0 : elementTypeField.hashCode());
         result = prime * result + ((goodMap == null) ? 0 : goodMap.hashCode());
+        result = prime * result + ((labeledPoint == null) ? 0 : labeledPoint.hashCode());
         result = prime * result + ((longField == null) ? 0 : longField.hashCode());
-        result = prime * result + ((point == null) ? 0 : point.hashCode());
         result = prime * result + ((stringField == null) ? 0 : stringField.hashCode());
         return result;
     }
@@ -158,15 +150,15 @@ public class TestModelWithGoodHashMap {
                 return false;
         } else if (!goodMap.equals(other.goodMap))
             return false;
+        if (labeledPoint == null) {
+            if (other.labeledPoint != null)
+                return false;
+        } else if (!labeledPoint.equals(other.labeledPoint))
+            return false;
         if (longField == null) {
             if (other.longField != null)
                 return false;
         } else if (!longField.equals(other.longField))
-            return false;
-        if (point == null) {
-            if (other.point != null)
-                return false;
-        } else if (!point.equals(other.point))
             return false;
         if (stringField == null) {
             if (other.stringField != null)
@@ -176,16 +168,22 @@ public class TestModelWithGoodHashMap {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return "TestModelWithGoodHashMap [longField=" + longField + ", stringField=" + stringField + ", booleanField="
+                + booleanField + ", byteArrayField=" + Arrays.toString(byteArrayField) + ", elementTypeField="
+                + elementTypeField + ", labeledPoint=" + labeledPoint + ", goodMap=" + goodMap + "]";
+    }
+
     public TestModelWithGoodHashMap(Long longField, String stringField, Boolean booleanField, byte[] byteArrayField,
-            ElementType elementTypeField, Point point, HashMap<String, String> goodMap) {
+            ElementType elementTypeField, LabeledPoint labeledPoint, HashMap<String, String> goodMap) {
         super();
         this.longField = longField;
         this.stringField = stringField;
         this.booleanField = booleanField;
         this.byteArrayField = byteArrayField;
         this.elementTypeField = elementTypeField;
-        this.point = point;
+        this.labeledPoint = labeledPoint;
         this.goodMap = goodMap;
     }
-
 }

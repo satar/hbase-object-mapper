@@ -25,7 +25,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-import java.awt.Point;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.annotation.ElementType;
@@ -67,6 +66,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMap.Builder;
 import com.google.common.collect.ImmutableSortedMap;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
+import com.mylife.hbase.mapper.model.LabeledPoint;
 import com.mylife.hbase.mapper.model.TestModel;
 import com.mylife.hbase.mapper.model.TestModelWithGoodHashMap;
 import com.mylife.hbase.mapper.model.TestModelWithOnlyGoodMap;
@@ -103,10 +103,10 @@ public class HBaseEntityMapperUnitTest {
     private final TestModelWithOnlyGoodMap testModelWithGoodMapExpected = new TestModelWithOnlyGoodMap(ImmutableMap.of(
             "testKey", "testValue", "otherKey", "otherValue"));
 
-    private final Point point = new Point(-1, 1);
+    private final LabeledPoint labledPoint = new LabeledPoint("labeled", -1, 1);
 
     private final TestModelWithGoodHashMap testModelWithGoodHashMapExpected = new TestModelWithGoodHashMap(1l, "2",
-            false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, point, new HashMap<String, String>(ImmutableMap.of(
+            false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, labledPoint, new HashMap<String, String>(ImmutableMap.of(
                     "testKey", "testValue", "otherKey", "otherValue")));
 
     private final TestModelWithUnsupportedTypeAnnotated testModelWithUnsupportedTypeAnnotated = new TestModelWithUnsupportedTypeAnnotated(
@@ -116,7 +116,7 @@ public class HBaseEntityMapperUnitTest {
             ImmutableMap.of("", "Hi!"));
 
     private final TestModelWithOnlyObjectFields testModelWithOnlyObjectFieldsExpected = new TestModelWithOnlyObjectFields(
-            point);
+            labledPoint);
 
     private final static Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected = BUILD_TEST_MAP();
 
@@ -495,7 +495,7 @@ public class HBaseEntityMapperUnitTest {
         columnFamilyResultMap.put(
                 Bytes.toBytes("OBJECT_STUFF"),
                 new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
-                        Bytes.toBytes("point"), kyroOutput(testModelWithGoodHashMapExpected.getPoint())).build()));
+                        Bytes.toBytes("labeledPoint"), kyroOutput(testModelWithGoodHashMapExpected.getLabeledPoint())).build()));
 
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("elementTypeField"),
                 Bytes.toBytes(ElementType.ANNOTATION_TYPE.name()));
@@ -514,7 +514,7 @@ public class HBaseEntityMapperUnitTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testToBytesException() throws Exception {
-        Whitebox.invokeMethod(this.hBaseEntityMapper, "toBytes", point);
+        Whitebox.invokeMethod(this.hBaseEntityMapper, "toBytes", labledPoint);
     }
 
     private byte[] kyroOutput(Object object) throws Exception {

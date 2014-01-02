@@ -16,6 +16,7 @@
 		<cdh.version>cdh4.0.1</cdh.version>
 		<powermock.version>1.5.2</powermock.version>
 		<spring.version>3.2.6.RELEASE</spring.version>
+		<jackson.version>2.3.0</jackson.version>
 		<maven.compiler.source>1.7</maven.compiler.source>
 		<maven.compiler.target>1.7</maven.compiler.target>
 	</properties>
@@ -87,6 +88,16 @@
 			<groupId>org.iq80.snappy</groupId>
 			<artifactId>snappy</artifactId>
 			<version>0.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
 		</dependency>
 	</dependencies>
 	<scm>

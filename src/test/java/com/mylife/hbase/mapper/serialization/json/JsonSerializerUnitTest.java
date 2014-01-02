@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.mylife.hbase.mapper.serialization.kryo;
+package com.mylife.hbase.mapper.serialization.json;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,15 +29,14 @@ import com.mylife.hbase.mapper.model.LabeledPoint;
  * @author Mike E
  */
 
-public class KryoSerializerUnitTest {
+public class JsonSerializerUnitTest {
 
-    private final LabeledPoint labeledPointExcepted = new LabeledPoint("Label", -1, -1);
+    private final LabeledPoint labeledPointExcepted = new LabeledPoint("Label", -1, 1);
 
     @Test
     public void testSerialzationDeserialiationLifeCycle() throws Exception {
-        KryoSerializer kryoSerializer = new KryoSerializer();
-        assertEquals(labeledPointExcepted,
-                kryoSerializer.deserialize(kryoSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
+        JsonSerializer jsonSerializer = new JsonSerializer();
+        assertEquals(labeledPointExcepted, jsonSerializer.deserialize(jsonSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
     }
 
 }

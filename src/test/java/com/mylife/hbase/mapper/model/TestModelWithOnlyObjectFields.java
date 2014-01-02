@@ -16,8 +16,6 @@
 
 package com.mylife.hbase.mapper.model;
 
-import java.awt.Point;
-
 import com.mylife.hbase.mapper.annotation.HBaseObjectField;
 import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
@@ -32,14 +30,19 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 public class TestModelWithOnlyObjectFields {
 
     @HBaseObjectField
-    private Point point;
+    private LabeledPoint labeledPoint;
 
-    public Point getPoint() {
-        return point;
+    public LabeledPoint getLabeledPoint() {
+        return labeledPoint;
     }
 
-    public void setPoint(Point point) {
-        this.point = point;
+    public void setLabeledPoint(LabeledPoint labeledPoint) {
+        this.labeledPoint = labeledPoint;
+    }
+
+    @Override
+    public String toString() {
+        return "TestModelWithOnlyObjectFields [labeledPoint=" + labeledPoint + "]";
     }
 
     @HBaseRowKey
@@ -47,7 +50,7 @@ public class TestModelWithOnlyObjectFields {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((point == null) ? 0 : point.hashCode());
+        result = prime * result + ((labeledPoint == null) ? 0 : labeledPoint.hashCode());
         return result;
     }
 
@@ -60,18 +63,17 @@ public class TestModelWithOnlyObjectFields {
         if (getClass() != obj.getClass())
             return false;
         TestModelWithOnlyObjectFields other = (TestModelWithOnlyObjectFields) obj;
-        if (point == null) {
-            if (other.point != null)
+        if (labeledPoint == null) {
+            if (other.labeledPoint != null)
                 return false;
-        } else if (!point.equals(other.point))
+        } else if (!labeledPoint.equals(other.labeledPoint))
             return false;
         return true;
     }
 
-    public TestModelWithOnlyObjectFields(Point point) {
+    public TestModelWithOnlyObjectFields(LabeledPoint labeledPoint) {
         super();
-        this.point = point;
+        this.labeledPoint = labeledPoint;
     }
 
-    
 }
