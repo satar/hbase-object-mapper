@@ -64,6 +64,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
@@ -306,11 +307,19 @@ public class HBaseEntityMapper {
     }
 
     public <T> ImmutableList<T> objectListFrom(final Result[] results, final Class<T> hBasePersistanceClass){
-        return null;//TODO implement me!
+        return objectListFromIterable(Arrays.asList(results),hBasePersistanceClass);
     }
     
     public <T> ImmutableList<T> objectListFrom(final ResultScanner results, final Class<T> hBasePersistanceClass){
-        return null;//TODO implement me!
+        return objectListFromIterable(results,hBasePersistanceClass);
+    }
+    
+    private <T> ImmutableList<T> objectListFromIterable(final Iterable<Result> results, final Class<T> hBasePersistanceClass){
+        Builder<T> builder = ImmutableList.builder();
+        for(final Result result : results){
+            builder.add(objectFrom(result, hBasePersistanceClass));
+        }
+        return builder.build();
     }
     
     @SuppressWarnings("unchecked")

@@ -31,6 +31,8 @@ import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -44,6 +46,7 @@ import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.iq80.snappy.SnappyOutputStream;
 import org.junit.Before;
@@ -100,14 +103,14 @@ public class HBaseEntityMapperUnitTest {
             3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346F,
             4L, "5", false, new byte[] { 6 }, null);
 
-    private final TestModelWithOnlyGoodMap testModelWithGoodMapExpected = new TestModelWithOnlyGoodMap(ImmutableMap.of(
+    private final TestModelWithOnlyGoodMap testModelWithOnlyGoodMap = new TestModelWithOnlyGoodMap(ImmutableMap.of(
             "testKey", "testValue", "otherKey", "otherValue"));
 
     private final LabeledPoint labledPoint = new LabeledPoint("labeled", -1, 1);
 
     private final TestModelWithGoodHashMap testModelWithGoodHashMapExpected = new TestModelWithGoodHashMap(1l, "2",
-            false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, labledPoint, new HashMap<String, String>(ImmutableMap.of(
-                    "testKey", "testValue", "otherKey", "otherValue")));
+            false, new byte[] { 3 }, ElementType.ANNOTATION_TYPE, labledPoint, new HashMap<String, String>(
+                    ImmutableMap.of("testKey", "testValue", "otherKey", "otherValue")));
 
     private final TestModelWithUnsupportedTypeAnnotated testModelWithUnsupportedTypeAnnotated = new TestModelWithUnsupportedTypeAnnotated(
             (short) 0, ImmutableList.of((short) 1, (short) 2));
@@ -185,6 +188,12 @@ public class HBaseEntityMapperUnitTest {
 
     @Mock
     Result result;
+
+    @Mock
+    ResultScanner resultScanner;
+
+    @Mock
+    Iterator<Result> resultIterator;
 
     HBaseEntityMapper hBaseEntityMapper;
 
@@ -466,8 +475,57 @@ public class HBaseEntityMapperUnitTest {
 
         when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
 
-        assertEquals(testModelWithGoodMapExpected,
+        assertEquals(testModelWithOnlyGoodMap,
                 this.hBaseEntityMapper.objectFrom(result, TestModelWithOnlyGoodMap.class));
+    }
+
+    @Test
+    public void objectListFromResultScannerTest() throws Exception {
+        final NavigableMap<byte[], NavigableMap<byte[], byte[]>> columnFamilyResultMap = new TreeMap<byte[], NavigableMap<byte[], byte[]>>(
+                Bytes.BYTES_COMPARATOR);
+
+        columnFamilyResultMap.put(
+                Bytes.toBytes("STUFF"),
+                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
+                        Bytes.toBytes("testKey"), Bytes.toBytes("testValue")).build()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("otherKey"), Bytes.toBytes("otherValue"));
+
+        when(resultScanner.iterator()).thenReturn(resultIterator);
+        when(resultIterator.hasNext()).thenReturn(true, false);
+
+        when(resultIterator.next()).thenReturn(result);
+
+        when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
+
+        List<TestModelWithOnlyGoodMap> testModelWithOnlyGoodMaps = this.hBaseEntityMapper.objectListFrom(resultScanner,
+                TestModelWithOnlyGoodMap.class);
+
+        assertNotNull(testModelWithOnlyGoodMaps);
+        assertFalse(testModelWithOnlyGoodMaps.isEmpty());
+        assertEquals(1, testModelWithOnlyGoodMaps.size());
+        assertEquals(testModelWithOnlyGoodMap, testModelWithOnlyGoodMaps.get(0));
+    }
+
+    @Test
+    public void objectListFromResultArrayTest() throws Exception {
+        final NavigableMap<byte[], NavigableMap<byte[], byte[]>> columnFamilyResultMap = new TreeMap<byte[], NavigableMap<byte[], byte[]>>(
+                Bytes.BYTES_COMPARATOR);
+
+        columnFamilyResultMap.put(
+                Bytes.toBytes("STUFF"),
+                new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
+                        Bytes.toBytes("testKey"), Bytes.toBytes("testValue")).build()));
+        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("otherKey"), Bytes.toBytes("otherValue"));
+
+        when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
+
+        List<TestModelWithOnlyGoodMap> testModelWithOnlyGoodMaps = this.hBaseEntityMapper.objectListFrom(new Result[] {
+                result, result }, TestModelWithOnlyGoodMap.class);
+
+        assertNotNull(testModelWithOnlyGoodMaps);
+        assertFalse(testModelWithOnlyGoodMaps.isEmpty());
+        assertEquals(2, testModelWithOnlyGoodMaps.size());
+        assertEquals(testModelWithOnlyGoodMap, testModelWithOnlyGoodMaps.get(0));
     }
 
     @Test
@@ -495,7 +553,8 @@ public class HBaseEntityMapperUnitTest {
         columnFamilyResultMap.put(
                 Bytes.toBytes("OBJECT_STUFF"),
                 new TreeMap<byte[], byte[]>(new ImmutableSortedMap.Builder<byte[], byte[]>(Bytes.BYTES_COMPARATOR).put(
-                        Bytes.toBytes("labeledPoint"), kyroOutput(testModelWithGoodHashMapExpected.getLabeledPoint())).build()));
+                        Bytes.toBytes("labeledPoint"), kyroOutput(testModelWithGoodHashMapExpected.getLabeledPoint()))
+                        .build()));
 
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("elementTypeField"),
                 Bytes.toBytes(ElementType.ANNOTATION_TYPE.name()));
