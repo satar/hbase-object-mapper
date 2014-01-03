@@ -17,6 +17,7 @@
 package com.mylife.hbase.mapper.serialization.json;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
@@ -33,6 +34,16 @@ public class JsonSerializerUnitTest {
 
     private final LabeledPoint labeledPointExcepted = new LabeledPoint("Label", -1, 1);
 
+    @Test
+    public void testNullSerialization() throws Exception {
+        assertNull(JsonSerializer.newInstance().serialize(null));
+    }
+    
+    @Test
+    public void testNullDeserialization() throws Exception {
+        assertNull(JsonSerializer.newInstance().deserialize(null, LabeledPoint.class));
+    }
+    
     @Test
     public void testSerialzationDeserialiationLifeCycle() throws Exception {
         JsonSerializer jsonSerializer = JsonSerializer.newInstance();

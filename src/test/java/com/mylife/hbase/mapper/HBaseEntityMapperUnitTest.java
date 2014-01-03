@@ -97,10 +97,10 @@ public class HBaseEntityMapperUnitTest {
             4L, "5", false, new byte[] { 6 }, (ContentType) Whitebox.getInternalState(TypeHandler.class,
                     "DEFAULT_CONTENT_TYPE"));
     private final TestModel testModelNullContentTypeExpected = new TestModel(
-            -1,
-            (short) 0,
-            2.71828182845904523536028747135266249775724709369995,
-            3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346F,
+            0,
+            (short) 1,
+            2.7182818284590452353602874713526624977,
+            3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120F,
             4L, "5", false, new byte[] { 6 }, null);
 
     private final TestModelWithOnlyGoodMap testModelWithOnlyGoodMap = new TestModelWithOnlyGoodMap(ImmutableMap.of(
@@ -120,6 +120,9 @@ public class HBaseEntityMapperUnitTest {
 
     private final TestModelWithOnlyObjectFields testModelWithOnlyObjectFieldsExpected = new TestModelWithOnlyObjectFields(
             labledPoint);
+    
+    private final TestModelWithOnlyObjectFields testModelWithOnlyNullObjectFieldsExpected = new TestModelWithOnlyObjectFields(
+            null);
 
     private final static Map<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected = BUILD_TEST_MAP();
 
@@ -368,6 +371,14 @@ public class HBaseEntityMapperUnitTest {
                 hTableInterface);
         this.hBaseEntityMapper.save(testModelWithOnlyObjectFieldsExpected);
     }
+    
+    @Test
+    public void saveOnlyNullObjectFieldTest() throws Exception {
+
+        when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
+                hTableInterface);
+        this.hBaseEntityMapper.save(testModelWithOnlyNullObjectFieldsExpected);
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void saveUnsupportedTypeTest() throws Exception {
@@ -446,15 +457,14 @@ public class HBaseEntityMapperUnitTest {
                         Bytes.toBytes(testModelNullContentTypeExpected.getBooleanField())).build()));
         columnFamilyResultMap.get(Bytes.toBytes("OTHER_STUFF")).put(Bytes.toBytes("byteArrayField"),
                 testModelNullContentTypeExpected.getByteArrayField());
-        columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("contentTypeField"), null);
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("integerField"),
-                Bytes.toBytes(testModelExpected.getIntegerField()));
+                Bytes.toBytes(testModelNullContentTypeExpected.getIntegerField()));
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("floatField"),
-                Bytes.toBytes(testModelExpected.getFloatField()));
+                Bytes.toBytes(testModelNullContentTypeExpected.getFloatField()));
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("shortField"),
-                Bytes.toBytes(testModelExpected.getShortField()));
+                Bytes.toBytes(testModelNullContentTypeExpected.getShortField()));
         columnFamilyResultMap.get(Bytes.toBytes("STUFF")).put(Bytes.toBytes("doubleField"),
-                Bytes.toBytes(testModelExpected.getDoubleField()));
+                Bytes.toBytes(testModelNullContentTypeExpected.getDoubleField()));
 
         when(result.getNoVersionMap()).thenReturn(columnFamilyResultMap);
 

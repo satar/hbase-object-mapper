@@ -17,6 +17,7 @@
 package com.mylife.hbase.mapper.serialization.kryo;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import org.junit.Test;
 
@@ -33,6 +34,16 @@ public class KryoSerializerUnitTest {
 
     private final LabeledPoint labeledPointExcepted = new LabeledPoint("Label", -1, -1);
 
+    @Test
+    public void testNullSerialization() throws Exception {
+        assertNull(KryoSerializer.newInstance().serialize(null));
+    }
+    
+    @Test
+    public void testNullDeserialization() throws Exception {
+        assertNull(KryoSerializer.newInstance().deserialize(null, LabeledPoint.class));
+    }
+    
     @Test
     public void testSerialzationDeserialiationLifeCycle() throws Exception {
         KryoSerializer kryoSerializer = KryoSerializer.newInstance();

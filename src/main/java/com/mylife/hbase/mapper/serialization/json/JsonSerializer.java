@@ -34,12 +34,17 @@ public class JsonSerializer implements HBaseObjectSerializer {
 
     @Override
     public byte[] serialize(final Object object) throws IOException {
-
+        if(object == null){
+            return null;
+        }
         return OBJECT_MAPPER.writeValueAsBytes(object);
     }
 
     @Override
     public <T> T deserialize(final byte[] byteArray, final Class<T> type) throws IOException {
+        if(byteArray == null || type == null){
+            return null;
+        }
         return OBJECT_MAPPER.readValue(byteArray, type);
     }
 

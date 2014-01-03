@@ -62,6 +62,7 @@ import org.springframework.util.ReflectionUtils;
 
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
@@ -427,22 +428,27 @@ public class HBaseEntityMapper {
         if (annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod.get(hbasePersistableObject.getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod.get(
                     hbasePersistableObject.getClass()).keySet()) {
-
-                puts.add(buildPut(
+                final Put put = buildPut(
                         columnFamilyNameFromHBaseFieldAnnotatedField(field),
                         rowKey,
                         field.getName(),
                         fieldValue(field, hbasePersistableObject,
-                                annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod)));
+                                annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod));
+                if(put != null){
+                    puts.add(put);    
+                }
             }
         }
         if (annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(hbasePersistableObject
                 .getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
                     hbasePersistableObject.getClass()).keySet()) {
-                puts.add(buildPut(columnFamilyNameFromHBaseObjectFieldAnnotatedField(field), rowKey, field.getName(),
+                final Put put = buildPut(columnFamilyNameFromHBaseObjectFieldAnnotatedField(field), rowKey, field.getName(),
                         field.getAnnotation(HBaseObjectField.class).serializationStategy().serialize(fieldValue(field, hbasePersistableObject,
-                                annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod))));
+                                annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod)));
+                if(put != null){
+                    puts.add(put);    
+                }
             }
         }
 
@@ -450,7 +456,7 @@ public class HBaseEntityMapper {
                 .get(hbasePersistableObject.getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod.get(
                     hbasePersistableObject.getClass()).keySet()) {
-                puts.addAll(Iterables.transform(
+                puts.addAll(Iterables.filter(Iterables.transform(
                         ((Map<String, Object>) fieldValue(field, hbasePersistableObject,
                                 annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod)).entrySet(),
                         new Function<Map.Entry<String, Object>, Put>() {
@@ -460,13 +466,13 @@ public class HBaseEntityMapper {
                                 return buildPut(columnFamilyNameFromHBaseMapFieldAnnotatedField(field), rowKey,
                                         input.getKey(), input.getValue());
                             }
-                        }));
+                        }), Predicates.notNull()));
             }
         }
 
         return puts.build();
     }
-
+    
     private byte[] getRowKeyFrom(final Object hbasePersistableObject) throws Exception {
         AccessibleObject accessibleObject = annotatedClassToAnnotatedHBaseRowKey.get(hbasePersistableObject.getClass());
         accessibleObject.setAccessible(true);
@@ -480,6 +486,11 @@ public class HBaseEntityMapper {
 
     private Put buildPut(final byte[] columnFamilyName, final byte[] rowKey, final String qualifierName,
             final Object qualifierValue) {
+        if(columnFamilyName == null || rowKey == null || qualifierName == null || qualifierValue == null){
+            //all of the arguments are required
+            //just don't persist null values
+            return null;
+        }
         final Put put = new Put(rowKey);
         put.add(columnFamilyName, Bytes.toBytes(qualifierName), toBytes(qualifierValue));
         return put;
