@@ -47,40 +47,41 @@ public final class TypeHandler {
     private TypeHandler() {
         super();
     }
+
     /**
      * 
      * @param type
      * @return returns turn if the given type is currently supported
      */
-    public static boolean supports(@SuppressWarnings("rawtypes") final Class type){
-        if (type == Boolean.class || type.isEnum()){
+    public static boolean supports(@SuppressWarnings("rawtypes") final Class type) {
+        if (type == Boolean.class || type == boolean.class || type.isEnum()) {
             return true;
         }
-        try{
-            getTypedValue(type, new byte[]{1,2,3,4,5,6,7,8});
+        try {
+            getTypedValue(type, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
             return true;
-        }catch(IllegalArgumentException e){
+        } catch (IllegalArgumentException e) {
             return false;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <T> T getTypedValue(@SuppressWarnings("rawtypes") final Class type, final byte[] value) {
         if (value == null) {
             return null;
-        } else if (type == Integer.class) {
+        } else if (type == Integer.class || type == int.class) {
             return (T) Integer.valueOf(Bytes.toInt(value));
-        } else if (type == Long.class) {
+        } else if (type == Long.class || type == long.class) {
             return (T) Long.valueOf(Bytes.toLong(value));
         } else if (type == String.class) {
             return (T) Bytes.toString(value);
-        } else if (type == Boolean.class) {
+        } else if (type == Boolean.class || type == boolean.class) {
             return (T) Boolean.valueOf(Bytes.toBoolean(value));
-        } else if (type == Float.class) {
+        } else if (type == Float.class || type == float.class) {
             return (T) Float.valueOf(Bytes.toFloat(value));
-        } else if (type == Double.class) {
+        } else if (type == Double.class || type == double.class) {
             return (T) Double.valueOf(Bytes.toDouble(value));
-        } else if (type == Short.class) {
+        } else if (type == Short.class || type == short.class) {
             return (T) Short.valueOf(Bytes.toShort(value));
         } else if (type == byte[].class) {
             return (T) value;

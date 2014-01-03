@@ -77,6 +77,12 @@ public class TypeHandlerUnitTest {
         assertTrue(TypeHandler.supports(Float.class));
         assertTrue(TypeHandler.supports(String.class));
         assertTrue(TypeHandler.supports(Boolean.class));
+        assertTrue(TypeHandler.supports(long.class));
+        assertTrue(TypeHandler.supports(int.class));
+        assertTrue(TypeHandler.supports(short.class));
+        assertTrue(TypeHandler.supports(double.class));
+        assertTrue(TypeHandler.supports(float.class));
+        assertTrue(TypeHandler.supports(boolean.class));
         assertTrue(TypeHandler.supports(byte[].class));
         assertTrue(TypeHandler.supports(Alignment.class));
         assertTrue(TypeHandler.supports(ContentType.class));

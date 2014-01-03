@@ -36,13 +36,13 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 public class TestModelWithAbstractMap {
 
     @HBaseField
-    private Long longField;
+    private long longField;
 
     @HBaseField
     private String stringField;
 
     @HBaseField
-    private Boolean booleanField;
+    private boolean booleanField;
 
     @HBaseField
     private byte[] byteArrayField;
@@ -53,11 +53,11 @@ public class TestModelWithAbstractMap {
     @HBaseMapField
     private BadMap<String, String> badMap;
 
-    public Long getLongField() {
+    public long getLongField() {
         return longField;
     }
 
-    public void setLongField(Long longField) {
+    public void setLongField(long longField) {
         this.longField = longField;
     }
 
@@ -69,11 +69,11 @@ public class TestModelWithAbstractMap {
         this.stringField = stringField;
     }
 
-    public Boolean getBooleanField() {
+    public boolean getBooleanField() {
         return booleanField;
     }
 
-    public void setBooleanField(Boolean booleanField) {
+    public void setBooleanField(boolean booleanField) {
         this.booleanField = booleanField;
     }
 
@@ -101,16 +101,16 @@ public class TestModelWithAbstractMap {
         this.badMap = badMap;
     }
 
-    @Override
     @HBaseRowKey
+    @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((booleanField == null) ? 0 : booleanField.hashCode());
+        result = prime * result + ((badMap == null) ? 0 : badMap.hashCode());
+        result = prime * result + (booleanField ? 1231 : 1237);
         result = prime * result + Arrays.hashCode(byteArrayField);
         result = prime * result + ((contentTypeField == null) ? 0 : contentTypeField.hashCode());
-        result = prime * result + ((badMap == null) ? 0 : badMap.hashCode());
-        result = prime * result + ((longField == null) ? 0 : longField.hashCode());
+        result = prime * result + (int) (longField ^ (longField >>> 32));
         result = prime * result + ((stringField == null) ? 0 : stringField.hashCode());
         return result;
     }
@@ -124,10 +124,12 @@ public class TestModelWithAbstractMap {
         if (getClass() != obj.getClass())
             return false;
         TestModelWithAbstractMap other = (TestModelWithAbstractMap) obj;
-        if (booleanField == null) {
-            if (other.booleanField != null)
+        if (badMap == null) {
+            if (other.badMap != null)
                 return false;
-        } else if (!booleanField.equals(other.booleanField))
+        } else if (!badMap.equals(other.badMap))
+            return false;
+        if (booleanField != other.booleanField)
             return false;
         if (!Arrays.equals(byteArrayField, other.byteArrayField))
             return false;
@@ -136,15 +138,7 @@ public class TestModelWithAbstractMap {
                 return false;
         } else if (!contentTypeField.equals(other.contentTypeField))
             return false;
-        if (badMap == null) {
-            if (other.badMap != null)
-                return false;
-        } else if (!badMap.equals(other.badMap))
-            return false;
-        if (longField == null) {
-            if (other.longField != null)
-                return false;
-        } else if (!longField.equals(other.longField))
+        if (longField != other.longField)
             return false;
         if (stringField == null) {
             if (other.stringField != null)
@@ -164,7 +158,7 @@ public class TestModelWithAbstractMap {
         return builder.toString();
     }
 
-    public TestModelWithAbstractMap(Long longField, String stringField, Boolean booleanField, byte[] byteArrayField,
+    public TestModelWithAbstractMap(long longField, String stringField, boolean booleanField, byte[] byteArrayField,
             ContentType contentTypeField, BadMap<String, String> badMap) {
         super();
         this.longField = longField;
