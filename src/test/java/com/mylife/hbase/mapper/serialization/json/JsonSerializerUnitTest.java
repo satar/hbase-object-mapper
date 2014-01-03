@@ -19,9 +19,13 @@ package com.mylife.hbase.mapper.serialization.json;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
+import java.util.ArrayList;
+
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
 import com.mylife.hbase.mapper.model.LabeledPoint;
+import com.mylife.hbase.mapper.model.LabeledPointsWrapper;
 
 /**
  * unit test for the KryoSerialization
@@ -33,21 +37,31 @@ import com.mylife.hbase.mapper.model.LabeledPoint;
 public class JsonSerializerUnitTest {
 
     private final LabeledPoint labeledPointExcepted = new LabeledPoint("Label", -1, 1);
+    private final LabeledPointsWrapper labeledPointsWrapper = new LabeledPointsWrapper( new ArrayList<LabeledPoint>(
+            ImmutableList.of(labeledPointExcepted)));
 
     @Test
     public void testNullSerialization() throws Exception {
         assertNull(JsonSerializer.newInstance().serialize(null));
     }
-    
+
     @Test
     public void testNullDeserialization() throws Exception {
         assertNull(JsonSerializer.newInstance().deserialize(null, LabeledPoint.class));
     }
-    
+
     @Test
     public void testSerialzationDeserialiationLifeCycle() throws Exception {
         JsonSerializer jsonSerializer = JsonSerializer.newInstance();
-        assertEquals(labeledPointExcepted, jsonSerializer.deserialize(jsonSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
+        assertEquals(labeledPointExcepted,
+                jsonSerializer.deserialize(jsonSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
+    }
+
+    @Test
+    public void testSerialzationDeserialiationLifeCycleWithArrayList() throws Exception {
+        JsonSerializer jsonSerializer = JsonSerializer.newInstance();
+        assertEquals(labeledPointsWrapper,
+                jsonSerializer.deserialize(jsonSerializer.serialize(labeledPointsWrapper), LabeledPointsWrapper.class));
     }
 
 }

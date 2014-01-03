@@ -22,14 +22,20 @@ import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
 
 public class JsonSerializer implements HBaseObjectSerializer {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = GET_OBJECT_MAPPER();
+    
+    private static ObjectMapper GET_OBJECT_MAPPER() {
+        final ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        return objectMapper;
+    }
     
     private JsonSerializer(){
         
     }
     
     public static final JsonSerializer newInstance(){
-        return new JsonSerializer();
+        return new JsonSerializer(); 
     }
 
     @Override

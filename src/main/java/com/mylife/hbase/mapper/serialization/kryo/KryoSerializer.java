@@ -18,15 +18,32 @@ package com.mylife.hbase.mapper.serialization.kryo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.GregorianCalendar;
+import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.iq80.snappy.SnappyInputStream;
 import org.iq80.snappy.SnappyOutputStream;
+import org.joda.time.DateTime;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.CompatibleFieldSerializer;
 import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
+
+import de.javakaffee.kryoserializers.ArraysAsListSerializer;
+import de.javakaffee.kryoserializers.BitSetSerializer;
+import de.javakaffee.kryoserializers.GregorianCalendarSerializer;
+import de.javakaffee.kryoserializers.JdkProxySerializer;
+import de.javakaffee.kryoserializers.RegexSerializer;
+import de.javakaffee.kryoserializers.SynchronizedCollectionsSerializer;
+import de.javakaffee.kryoserializers.UUIDSerializer;
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
+import de.javakaffee.kryoserializers.jodatime.JodaDateTimeSerializer;
 
 public class KryoSerializer implements HBaseObjectSerializer {
 
@@ -54,7 +71,7 @@ public class KryoSerializer implements HBaseObjectSerializer {
 
     @Override
     public <T> T deserialize(byte[] byteArray, Class<T> type) throws IOException {
-        if(byteArray == null || type == null){
+        if (byteArray == null || type == null) {
             return null;
         }
         return getKryo().readObject(new Input(new SnappyInputStream(new ByteArrayInputStream(byteArray))), type);
@@ -63,7 +80,23 @@ public class KryoSerializer implements HBaseObjectSerializer {
     private Kryo getKryo() {
         final Kryo kryo = new Kryo();
         kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
+        
+        kryo.register(Arrays.asList("").getClass(), new ArraysAsListSerializer());
+        kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
+        kryo.register(InvocationHandler.class, new JdkProxySerializer());
+        kryo.register(UUID.class, new UUIDSerializer());
+        kryo.register(Pattern.class, new RegexSerializer());
+        kryo.register(BitSet.class, new BitSetSerializer());
+
+        UnmodifiableCollectionsSerializer.registerSerializers(kryo);
+        SynchronizedCollectionsSerializer.registerSerializers(kryo);
+
+        // custom serializers for non-jdk libs
+
+        // joda datetime
+        kryo.register(DateTime.class, new JodaDateTimeSerializer());
         return kryo;
+
     }
 
 }
