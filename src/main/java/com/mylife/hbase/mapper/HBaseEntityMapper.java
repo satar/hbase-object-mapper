@@ -51,6 +51,7 @@ import org.apache.hadoop.hbase.client.HTableInterface;
 import org.apache.hadoop.hbase.client.HTablePool;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.log4j.Logger;
 import org.powermock.reflect.Whitebox;
@@ -304,8 +305,16 @@ public class HBaseEntityMapper {
         }
     }
 
+    public <T> ImmutableList<T> objectListFrom(final Result[] results, final Class<T> hBasePersistanceClass){
+        return null;//TODO implement me!
+    }
+    
+    public <T> ImmutableList<T> objectListFrom(final ResultScanner results, final Class<T> hBasePersistanceClass){
+        return null;//TODO implement me!
+    }
+    
     @SuppressWarnings("unchecked")
-    public <T extends Object> T objectFrom(final Result result, final Class<T> hBasePersistanceClass) {
+    public <T> T objectFrom(final Result result, final Class<T> hBasePersistanceClass) {
         if (!annotatedClassToAnnotatedHBaseRowKey.containsKey(hBasePersistanceClass)) {
             throw new IllegalArgumentException(
                     "Class passed to objectFrom(final Result result, final Class<T> hBasePersistanceClass) must be a correct HBase persistable class! If this class is annotaed with @HBasePersistance please see startup errors for why it might have been excluded. ");
