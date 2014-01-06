@@ -18,10 +18,20 @@ package com.mylife.hbase.mapper.serialization.kryo;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -69,14 +79,37 @@ public class KryoSerializer implements HBaseObjectSerializer {
 
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <T> T deserialize(byte[] byteArray, Class<T> type) throws IOException {
-        if (byteArray == null || type == null) {
+    public <T> T deserialize(byte[] byteArray, Field field) throws IOException {
+        if (byteArray == null || field == null) {
             return null;
         }
-        return getKryo().readObject(new Input(new SnappyInputStream(new ByteArrayInputStream(byteArray))), type);
+        
+        return (T) getKryo().readObject(new Input(new SnappyInputStream(new ByteArrayInputStream(byteArray))), conreteTypeFrom(field.getType()));
     }
 
+    @SuppressWarnings("unchecked")
+    private <T> Class<T> conreteTypeFrom(Class<T> type){
+        if(type == List.class){
+            return (Class<T>) ArrayList.class;
+        }
+        if(type == Map.class){
+            return (Class<T>)HashMap.class;
+        }
+        if(type == Collection.class){
+            return (Class<T>)ArrayList.class;
+        }
+        if(type == Set.class){
+            return (Class<T>)HashSet.class;
+        }
+        if(type == Queue.class){
+            return (Class<T>)LinkedList.class;
+        }
+        return type;
+            
+    }
+    
     private Kryo getKryo() {
         final Kryo kryo = new Kryo();
         kryo.setDefaultSerializer(CompatibleFieldSerializer.class);

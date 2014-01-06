@@ -16,6 +16,7 @@
 package com.mylife.hbase.mapper.serialization;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 /**
  * interface to abstract out serialize to allow for selectable serialization
@@ -26,5 +27,5 @@ public interface HBaseObjectSerializer {
 
     byte[] serialize(Object object) throws IOException;
     
-    public <T> T deserialize(byte[] byteArray, Class<T> type) throws IOException;
+    public <T> T deserialize(byte[] byteArray, Field field) throws IOException;
 }

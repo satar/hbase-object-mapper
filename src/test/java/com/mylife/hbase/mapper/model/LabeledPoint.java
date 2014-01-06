@@ -37,6 +37,8 @@ public class LabeledPoint {
         return true;
     }
 
+
+
     public String getLabel() {
         return label;
     }
@@ -68,6 +70,12 @@ public class LabeledPoint {
     }
 
     public LabeledPoint() {
-        this(null, 0,0);
+        this(null, 0, 0);
     }
+
+    @Override
+    public String toString() {
+        return "LabeledPoint [label=" + label + ", x=" + x + ", y=" + y + "]";
+    }
+
 }

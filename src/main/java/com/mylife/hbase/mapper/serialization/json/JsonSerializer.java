@@ -16,15 +16,20 @@
 package com.mylife.hbase.mapper.serialization.json;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
+import com.mylife.hbase.mapper.util.TypeHandler;
 
 public class JsonSerializer implements HBaseObjectSerializer {
 
     private static final ObjectMapper OBJECT_MAPPER = GET_OBJECT_MAPPER();
     
-    private static ObjectMapper GET_OBJECT_MAPPER() {
+    private static ObjectMapper GET_OBJECT_MAPPER(){
         final ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
         return objectMapper;
@@ -47,9 +52,16 @@ public class JsonSerializer implements HBaseObjectSerializer {
     }
 
     @Override
-    public <T> T deserialize(final byte[] byteArray, final Class<T> type) throws IOException {
-        if(byteArray == null || type == null){
+    public <T> T deserialize(final byte[] byteArray, final Field field) throws IOException {
+        if(byteArray == null || field == null){
             return null;
+        }
+        @SuppressWarnings("unchecked")
+        final Class<T> type = (Class<T>) field.getType();
+        if(type.isAssignableFrom(Map.class)){
+            final Type[] types = TypeHandler.getGenericTypesFromField(field);
+            return OBJECT_MAPPER.reader(OBJECT_MAPPER.getTypeFactory().constructMapType(
+                    HashMap.class, (Class<?>) types[0], (Class<?>) types[1])).readValue(byteArray);
         }
         return OBJECT_MAPPER.readValue(byteArray, type);
     }

@@ -1,6 +1,7 @@
 package com.mylife.hbase.mapper;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 import com.mylife.hbase.mapper.serialization.HBaseObjectSerializer;
 import com.mylife.hbase.mapper.serialization.json.JsonSerializer;
@@ -20,8 +21,8 @@ public enum SerializationStategy {
         return hBaseObjectSerializer.serialize(object);
     }
 
-    public <T> T deserialize(byte[] byteArray, Class<T> type) throws IOException {
-        return hBaseObjectSerializer.deserialize(byteArray, type);
+    public <T> T deserialize(byte[] byteArray, Field field) throws IOException {
+        return hBaseObjectSerializer.deserialize(byteArray, field);
     }
 
 }

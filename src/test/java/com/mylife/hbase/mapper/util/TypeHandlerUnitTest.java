@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -30,6 +31,11 @@ import javax.swing.GroupLayout.Alignment;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
+
+import com.mylife.hbase.mapper.model.TestModelExtraRowKeyMethod;
+import com.mylife.hbase.mapper.model.TestModelWithBadMap;
+import com.mylife.hbase.mapper.model.TestModelWithGoodHashMap;
+import com.mylife.hbase.mapper.model.TestModelWithOnlyObjectFields;
 
 /**
  * stand alone unit test for the type converter
@@ -99,5 +105,23 @@ public class TypeHandlerUnitTest {
     @Test(expected = IllegalArgumentException.class)
     public void getTypedValueUnsupportedType() throws Exception {
         TypeHandler.getTypedValue(BigDecimal.class, Bytes.toBytes(ONE));
+    }
+    
+    @Test
+    public void getGenericTypesFromFieldTest(){
+        Type[] types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelWithGoodHashMap.class, "goodMap"));
+        assertEquals(String.class, types[0]);
+        assertEquals(String.class, types[1]);
+        
+        types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelWithBadMap.class, "badMap"));
+        assertEquals(Long.class, types[0]);
+        assertEquals(Object.class, types[1]);
+        
+        types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelExtraRowKeyMethod.class, "notAMap"));
+        assertEquals(Long.class, types[0]);
+        
+        types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelWithOnlyObjectFields.class, "labeledPoint"));
+        assertNull(types);
+        
     }
 }

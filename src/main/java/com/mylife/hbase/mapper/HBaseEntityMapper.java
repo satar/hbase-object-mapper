@@ -26,7 +26,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -219,7 +218,7 @@ public class HBaseEntityMapper {
                 final Iterator<Field> hBaseMapFieldsIterator = hBaseMapFieldAnnotatedFieldsSet.iterator();
                 if (hBaseMapFieldsIterator.hasNext()) {
                     final Field field = hBaseMapFieldsIterator.next();
-                    final Type[] types = ((ParameterizedType) field.getGenericType()).getActualTypeArguments();
+                    final Type[] types = TypeHandler.getGenericTypesFromField(field);
 
                     if ( (Modifier.isAbstract(field.getType().getModifiers()) && !Map.class.equals(field.getType())) || !Map.class.isAssignableFrom(field.getType()) || !String.class.equals((Class<?>) types[0])
                             || !String.class.equals((Class<?>) types[1])) {
@@ -352,12 +351,12 @@ public class HBaseEntityMapper {
             try {
                 ReflectionUtils.setField(field, type, field.getAnnotation(HBaseObjectField.class).serializationStategy().deserialize(
                         columnFamilyResultMap.get(columnFamilyNameFromHBaseObjectFieldAnnotatedField(field)).remove(
-                                Bytes.toBytes(field.getName())), field.getType()));
+                                Bytes.toBytes(field.getName())), field));
             } catch (IOException e) {
                 //We serialized this we should be able to de-serialize it.
                 //Did the serialization change?
                 //TODO: store serialization type so we can better guarantee de-serialization
-                LOG.error("Could not deserialize " + field.getName() + "Did the serialization type change from when you serialized the object?", e);
+                LOG.error("Could not deserialize " + field.getName() + "Did the serialization (KRYO/JSON) OR field type change from when you serialized the object?", e);
             }
         }
         mapFieldBlock: {

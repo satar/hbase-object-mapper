@@ -16,17 +16,9 @@
 
 package com.mylife.hbase.mapper.serialization.kryo;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
-import java.util.ArrayList;
-
 import org.junit.Test;
 
-import com.google.common.collect.ImmutableList;
-import com.mylife.hbase.mapper.model.LabeledPoint;
-import com.mylife.hbase.mapper.model.LabeledPointsWrapper;
-import com.mylife.hbase.mapper.serialization.json.JsonSerializer;
+import com.mylife.hbase.mapper.serialization.json.AbstractSerializationUnitTest;
 
 /**
  * unit test for the KryoSerialization
@@ -35,34 +27,57 @@ import com.mylife.hbase.mapper.serialization.json.JsonSerializer;
  * @author Mike E
  */
 
-public class KryoSerializerUnitTest {
+public class KryoSerializerUnitTest extends AbstractSerializationUnitTest {
 
-    private final LabeledPoint labeledPointExcepted = new LabeledPoint("Label", -1, -1);
-    private final LabeledPointsWrapper labeledPointsWrapper = new LabeledPointsWrapper(new ArrayList<LabeledPoint>(
-            ImmutableList.of(labeledPointExcepted)));
+    final private KryoSerializer kryoSerializer = KryoSerializer.newInstance();
 
     @Test
     public void testNullSerialization() throws Exception {
-        assertNull(KryoSerializer.newInstance().serialize(null));
+        super.testNullSerialization(kryoSerializer);
     }
 
     @Test
     public void testNullDeserialization() throws Exception {
-        assertNull(KryoSerializer.newInstance().deserialize(null, LabeledPoint.class));
+        super.testNullDeserialization(kryoSerializer);
     }
 
     @Test
     public void testSerialzationDeserialiationLifeCycle() throws Exception {
-        KryoSerializer kryoSerializer = KryoSerializer.newInstance();
-        assertEquals(labeledPointExcepted,
-                kryoSerializer.deserialize(kryoSerializer.serialize(labeledPointExcepted), LabeledPoint.class));
+        super.testSerialzationDeserialiationLifeCycle(kryoSerializer);
     }
 
     @Test
-    public void testSerialzationDeserialiationLifeCycleWithArrayList() throws Exception {
-        JsonSerializer jsonSerializer = JsonSerializer.newInstance();
-        assertEquals(labeledPointsWrapper,
-                jsonSerializer.deserialize(jsonSerializer.serialize(labeledPointsWrapper), LabeledPointsWrapper.class));
+    public void testSerialzationDeserialiationLifeCycleWithList() throws Exception {
+        super.testSerialzationDeserialiationLifeCycleWithList(kryoSerializer);
     }
 
+    @Test
+    public void testSerialzationDeserialiationLifeCycleWithMap() throws Exception {
+        super.testSerialzationDeserialiationLifeCycleWithMap(kryoSerializer);
+    }
+
+    @Test
+    public void testSerialzationDeserialiationLifeCycleWithSet() throws Exception {
+        super.testSerialzationDeserialiationLifeCycleWithSet(kryoSerializer);
+    }
+
+    @Test
+    public void testSerialzationDeserialiationLifeCycleWithQueue() throws Exception {
+        super.testSerialzationDeserialiationLifeCycleWithQueue(kryoSerializer);
+    }
+
+    @Test
+    public void testSerialzationDeserialiationLifeCycleWithCollection() throws Exception {
+        super.testSerialzationDeserialiationLifeCycleWithCollection(kryoSerializer);
+    }
+
+    @Test
+    public void testSerialzationDeserialiationLifeCycleWithWrappedArrayList() throws Exception {
+        super.testSerialzationDeserialiationLifeCycleWithWrappedArrayList(kryoSerializer);
+    }
+
+    @Test
+    public void testSerialzationDeserialiationLifeCycleWithLinkedList() throws Exception {
+        super.testSerialzationDeserialiationLifeCycleWithLinkedList(kryoSerializer);
+    }
 }

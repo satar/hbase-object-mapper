@@ -16,6 +16,10 @@
 
 package com.mylife.hbase.mapper.util;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+
 import javax.mail.internet.ContentType;
 import javax.mail.internet.ParseException;
 
@@ -99,4 +103,11 @@ public final class TypeHandler {
         }
     }
 
+    public static Type[] getGenericTypesFromField(final Field field) {
+        Type type = field.getGenericType();
+        if (ParameterizedType.class.isAssignableFrom(type.getClass())) {
+            return ((ParameterizedType) type).getActualTypeArguments();
+        }
+        return null;
+    }
 }
