@@ -59,15 +59,12 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.util.ReflectionUtils;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableList.Builder;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.mylife.hbase.mapper.annotation.HBaseField;
 import com.mylife.hbase.mapper.annotation.HBaseMapField;
@@ -422,32 +419,26 @@ public class HBaseEntityMapper {
 
     @SuppressWarnings("unchecked")
     private ImmutableList<Put> putsFrom(final Object hbasePersistableObject) throws Exception {
-        final com.google.common.collect.ImmutableList.Builder<Put> puts = ImmutableList.builder();
-        final byte[] rowKey = getRowKeyFrom(hbasePersistableObject);
+        final Put put = new Put(getRowKeyFrom(hbasePersistableObject));
         if (annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod.get(hbasePersistableObject.getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod.get(
                     hbasePersistableObject.getClass()).keySet()) {
-                final Put put = buildPut(
+                addToPut(put,
                         columnFamilyNameFromHBaseFieldAnnotatedField(field),
-                        rowKey,
+                        
                         field.getName(),
                         fieldValue(field, hbasePersistableObject,
                                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod));
-                if(put != null){
-                    puts.add(put);    
-                }
             }
         }
         if (annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(hbasePersistableObject
                 .getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod.get(
                     hbasePersistableObject.getClass()).keySet()) {
-                final Put put = buildPut(columnFamilyNameFromHBaseObjectFieldAnnotatedField(field), rowKey, field.getName(),
+                addToPut(put, columnFamilyNameFromHBaseObjectFieldAnnotatedField(field), field.getName(),
                         field.getAnnotation(HBaseObjectField.class).serializationStategy().serialize(fieldValue(field, hbasePersistableObject,
                                 annotatedClassToAnnotatedObjectFieldMappingWithCorrespondingGetterMethod)));
-                if(put != null){
-                    puts.add(put);    
-                }
+
             }
         }
 
@@ -455,21 +446,15 @@ public class HBaseEntityMapper {
                 .get(hbasePersistableObject.getClass()) != null) {
             for (final Field field : annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod.get(
                     hbasePersistableObject.getClass()).keySet()) {
-                puts.addAll(Iterables.filter(Iterables.transform(
-                        ((Map<String, Object>) fieldValue(field, hbasePersistableObject,
-                                annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod)).entrySet(),
-                        new Function<Map.Entry<String, Object>, Put>() {
-
-                            @Override
-                            public Put apply(Entry<String, Object> input) {
-                                return buildPut(columnFamilyNameFromHBaseMapFieldAnnotatedField(field), rowKey,
-                                        input.getKey(), input.getValue());
-                            }
-                        }), Predicates.notNull()));
+                for(final Map.Entry<String, Object> entry : ((Map<String, Object>) fieldValue(field, hbasePersistableObject,
+                        annotatedClassToAnnotatedMapFieldMappingWithCorrespondingGetterMethod)).entrySet()){
+                    addToPut(put, columnFamilyNameFromHBaseMapFieldAnnotatedField(field),
+                            entry.getKey(), entry.getValue());
+                }
             }
         }
 
-        return puts.build();
+        return ImmutableList.of(put);
     }
     
     private byte[] getRowKeyFrom(final Object hbasePersistableObject) throws Exception {
@@ -483,16 +468,16 @@ public class HBaseEntityMapper {
         }
     }
 
-    private Put buildPut(final byte[] columnFamilyName, final byte[] rowKey, final String qualifierName,
+    private void addToPut(final Put put, final byte[] columnFamilyName, final String qualifierName,
             final Object qualifierValue) {
-        if(columnFamilyName == null || rowKey == null || qualifierName == null || qualifierValue == null){
+        if(columnFamilyName == null || qualifierName == null || qualifierValue == null){
             //all of the arguments are required
             //just don't persist null values
-            return null;
+            return;
         }
-        final Put put = new Put(rowKey);
+        
         put.add(columnFamilyName, Bytes.toBytes(qualifierName), toBytes(qualifierValue));
-        return put;
+        return ;
     }
 
     private byte[] defaultColumnFamilyNameFrom(final Class<?> hBasePersistanceClass) {
