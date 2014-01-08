@@ -103,7 +103,7 @@ public class HBaseEntityMapper {
         final HBaseAdmin hBaseAdmin;
         try {
             hBaseAdmin = new HBaseAdmin((Configuration) Whitebox.getInternalState(hTablePool, "config"));
-        } catch (MasterNotRunningException | ZooKeeperConnectionException e) {
+        } catch (IOException e) {
             LOG.fatal("Could not connect to HBase failing HBase object mapping!", e);
             this.hTablePool = null;
             this.annotatedClassToAnnotatedHBaseRowKey = null;
@@ -370,8 +370,7 @@ public class HBaseEntityMapper {
                     try {
                         map = (Map<String, String>) Whitebox.getConstructor(field.getType()).newInstance(
                                 (Object[]) null);
-                    } catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-                            | InvocationTargetException e) {
+                    } catch (Exception e) {
                         //Done our best to guard against this but still possible
                         LOG.error("Could not create new instance of map.", e);
                         break mapFieldBlock;
