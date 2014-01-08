@@ -17,8 +17,8 @@
 		<powermock.version>1.5.2</powermock.version>
 		<spring.version>3.2.6.RELEASE</spring.version>
 		<jackson.version>2.3.0</jackson.version>
-		<maven.compiler.source>1.6</maven.compiler.source>
-		<maven.compiler.target>1.6</maven.compiler.target>
+        <java.source.version>1.6</java.source.version>
+        <java.target.version>1.6</java.target.version>
 	</properties>
 	<dependencies>
 		<dependency>
