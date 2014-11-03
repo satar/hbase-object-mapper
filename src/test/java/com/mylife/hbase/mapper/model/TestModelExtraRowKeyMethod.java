@@ -32,7 +32,6 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
  * 
  * @author Mike E
  */
-
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
 public class TestModelExtraRowKeyMethod {
 

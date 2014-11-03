@@ -1,3 +1,8 @@
+// =======================================================
+// Copyright Mylife.com Inc., 2013. All rights reserved.
+//
+// =======================================================
+
 package com.mylife.hbase.mapper.model;
 
 import java.util.List;

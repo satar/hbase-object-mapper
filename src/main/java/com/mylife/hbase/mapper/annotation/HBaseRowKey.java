@@ -22,11 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to show the a given field or method should be used to get the
- * HBase row key. Required for HBasePersistent classes
- * 
- * 
- * @author
+ * Annotation to show the a given field or method should be used to get the HBase row key. Required for HBasePersistent
+ * classes
  */
 @Target({ ElementType.FIELD, ElementType.METHOD })
 @Retention(RetentionPolicy.RUNTIME)

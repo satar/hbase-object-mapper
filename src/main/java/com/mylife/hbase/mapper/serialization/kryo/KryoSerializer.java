@@ -58,7 +58,7 @@ import de.javakaffee.kryoserializers.jodatime.JodaDateTimeSerializer;
 public class KryoSerializer implements HBaseObjectSerializer {
 
     private KryoSerializer() {
-
+        // don't allow others to create new instances
     }
 
     public static KryoSerializer newInstance() {
@@ -85,35 +85,35 @@ public class KryoSerializer implements HBaseObjectSerializer {
         if (byteArray == null || field == null) {
             return null;
         }
-        
-        return (T) getKryo().readObject(new Input(new SnappyInputStream(new ByteArrayInputStream(byteArray))), conreteTypeFrom(field.getType()));
+
+        return (T) getKryo().readObject(new Input(new SnappyInputStream(new ByteArrayInputStream(byteArray))),
+                conreteTypeFrom(field.getType()));
     }
 
     @SuppressWarnings("unchecked")
-    private <T> Class<T> conreteTypeFrom(Class<T> type){
-        if(type == List.class){
+    private <T> Class<T> conreteTypeFrom(Class<T> type) {
+        if (type == List.class) {
             return (Class<T>) ArrayList.class;
         }
-        if(type == Map.class){
-            return (Class<T>)HashMap.class;
+        if (type == Map.class) {
+            return (Class<T>) HashMap.class;
         }
-        if(type == Collection.class){
-            return (Class<T>)ArrayList.class;
+        if (type == Collection.class) {
+            return (Class<T>) ArrayList.class;
         }
-        if(type == Set.class){
-            return (Class<T>)HashSet.class;
+        if (type == Set.class) {
+            return (Class<T>) HashSet.class;
         }
-        if(type == Queue.class){
-            return (Class<T>)LinkedList.class;
+        if (type == Queue.class) {
+            return (Class<T>) LinkedList.class;
         }
         return type;
-            
     }
-    
+
     private Kryo getKryo() {
         final Kryo kryo = new Kryo();
         kryo.setDefaultSerializer(CompatibleFieldSerializer.class);
-        
+
         kryo.register(Arrays.asList("").getClass(), new ArraysAsListSerializer());
         kryo.register(GregorianCalendar.class, new GregorianCalendarSerializer());
         kryo.register(InvocationHandler.class, new JdkProxySerializer());
@@ -129,7 +129,5 @@ public class KryoSerializer implements HBaseObjectSerializer {
         // joda datetime
         kryo.register(DateTime.class, new JodaDateTimeSerializer());
         return kryo;
-
     }
-
 }

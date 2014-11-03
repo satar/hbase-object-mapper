@@ -46,10 +46,10 @@ public class TestModelWithDifferentBadMap {
 
     @HBaseField
     private byte[] byteArrayField;
-    
+
     @HBaseField
     private ContentType contentTypeField;
-    
+
     @HBaseMapField
     private Map<String, Object> badMap;
 
@@ -164,7 +164,8 @@ public class TestModelWithDifferentBadMap {
         return builder.toString();
     }
 
-    public TestModelWithDifferentBadMap(Long longField, String stringField, Boolean booleanField, byte[] byteArrayField,
+    public TestModelWithDifferentBadMap(Long longField, String stringField, Boolean booleanField,
+            byte[] byteArrayField,
             ContentType contentTypeField, Map<String, Object> badMap) {
         super();
         this.longField = longField;
@@ -175,6 +176,4 @@ public class TestModelWithDifferentBadMap {
         this.badMap = badMap;
     }
 
-
-    
 }

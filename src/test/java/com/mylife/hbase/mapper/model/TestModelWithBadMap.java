@@ -31,7 +31,6 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
  * 
  * @author Mike E
  */
-
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
 public class TestModelWithBadMap {
 
@@ -47,10 +46,10 @@ public class TestModelWithBadMap {
 
     @HBaseField
     private byte[] byteArrayField;
-    
+
     @HBaseField
     private ContentType contentTypeField;
-    
+
     @HBaseMapField
     private Map<Long, Object> badMap;
 
@@ -175,6 +174,4 @@ public class TestModelWithBadMap {
         this.badMap = badMap;
     }
 
-
-    
 }

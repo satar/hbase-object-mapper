@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
  * 
  * @author Mike E
  */
-
 public final class TypeHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(TypeHandler.class);
@@ -90,7 +89,7 @@ public final class TypeHandler {
         } else if (type == byte[].class) {
             return (T) value;
         } else if (type.isEnum()) {
-            return (T) Enum.valueOf(type, Bytes.toString(value));
+            return (T) Enum.valueOf(type, Bytes.toString(value).trim());
         } else if (type == ContentType.class) {
             try {
                 return (T) new ContentType(Bytes.toString(value));

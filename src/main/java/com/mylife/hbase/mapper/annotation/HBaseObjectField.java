@@ -1,5 +1,5 @@
 // =======================================================
-// Copyright Mylife.com Inc., 2013. All rights reserved.
+// Copyright Mylife.com Inc., 2014. All rights reserved.
 //
 // =======================================================
 //  Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,13 +27,17 @@ import com.mylife.hbase.mapper.SerializationStategy;
 /**
  * Marker annotation to show that this field should serialized and stored in HBase as a blob.
  * 
- * This serialization/de-serialization is done via {@link Kryo}
- * with {@link Kryo#setDefaultSerializer() } to set {@link CompatibleFieldSerializer}
- * @author MikeE
+ * This serialization/de-serialization is done via {@link Kryo} with {@link Kryo#setDefaultSerializer() }
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface HBaseObjectField {
     String columnFamilyName() default "";
+
+    /*
+     * Flag that can be set for use with a coprocessor to determine if index should be created from this field.
+     */
+    boolean indexable() default false;
+
     SerializationStategy serializationStategy() default SerializationStategy.KRYO;
 }

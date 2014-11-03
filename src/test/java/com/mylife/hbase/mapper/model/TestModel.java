@@ -1,18 +1,7 @@
 // =======================================================
-// Copyright Mylife.com Inc., 2013. All rights reserved.
+// Copyright Mylife.com Inc., 2014. All rights reserved.
 //
 // =======================================================
-//  Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 
 package com.mylife.hbase.mapper.model;
 
@@ -25,12 +14,10 @@ import com.mylife.hbase.mapper.annotation.HBasePersistance;
 import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
- * A test POJO with all of the supported fields. As types are added this model
- * should be updated as well.
+ * A test POJO with all of the supported fields. As types are added this model should be updated as well.
  * 
  * @author Mike E
  */
-
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
 public class TestModel {
 
@@ -57,6 +44,15 @@ public class TestModel {
 
     @HBaseField(columnFamilyName = "OTHER_STUFF")
     private byte[] byteArrayField;
+    
+    @HBaseField(indexable = true)
+    private Long indexableLongField;
+
+    @HBaseField(indexable = true)
+    private String indexableStringField;
+    
+    @HBaseField(indexable = true)
+    private Boolean indexableBooleanField;
 
     @HBaseField
     private ContentType contentTypeField;
@@ -131,6 +127,30 @@ public class TestModel {
 
     public void setContentTypeField(ContentType contentTypeField) {
         this.contentTypeField = contentTypeField;
+    }
+    
+    public Long getIndexableLongField() {
+        return indexableLongField;
+    }
+
+    public void setIndexableLongField(Long indexableLongField) {
+        this.indexableLongField = indexableLongField;
+    }
+
+    public String getIndexableStringField() {
+        return indexableStringField;
+    }
+
+    public void setIndexableStringField(String indexableStringField) {
+        this.indexableStringField = indexableStringField;
+    }
+
+    public Boolean getIndexableBooleanField() {
+        return indexableBooleanField;
+    }
+
+    public void setIndexableBooleanField(Boolean indexableBooleanField) {
+        this.indexableBooleanField = indexableBooleanField;
     }
 
     @Override

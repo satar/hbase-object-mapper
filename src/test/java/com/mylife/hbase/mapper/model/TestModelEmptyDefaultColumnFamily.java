@@ -29,10 +29,7 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
 
 /**
  * A test POJO with empty defaultColumnFamilyName
- * 
- * @author Mike E
  */
-
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "")
 public class TestModelEmptyDefaultColumnFamily {
 
@@ -113,7 +110,8 @@ public class TestModelEmptyDefaultColumnFamily {
         return notAMap;
     }
 
-    public TestModelEmptyDefaultColumnFamily(Integer integerField, Short shortField, Double doubleField, Float floatField, Long longField,
+    public TestModelEmptyDefaultColumnFamily(Integer integerField, Short shortField, Double doubleField,
+            Float floatField, Long longField,
             String stringField, Boolean booleanField, byte[] byteArrayField, ContentType contentTypeField) {
         super();
         this.integerField = integerField;

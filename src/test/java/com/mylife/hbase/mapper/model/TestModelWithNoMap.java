@@ -46,10 +46,10 @@ public class TestModelWithNoMap {
 
     @HBaseField
     private byte[] byteArrayField;
-    
+
     @HBaseField
     private ContentType contentTypeField;
-    
+
     @HBaseMapField
     private List<Long> list;
 
@@ -175,6 +175,4 @@ public class TestModelWithNoMap {
         this.list = list;
     }
 
-
-    
 }

@@ -26,11 +26,10 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
  * 
  * @author Mike E
  */
-
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
 public class TestModelWithOnlyObjectFields {
 
-    @HBaseObjectField(serializationStategy=SerializationStategy.JSON)
+    @HBaseObjectField(serializationStategy = SerializationStategy.JSON)
     private LabeledPoint labeledPoint;
 
     public LabeledPoint getLabeledPoint() {

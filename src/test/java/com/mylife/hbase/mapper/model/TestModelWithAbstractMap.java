@@ -31,7 +31,6 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
  * 
  * @author Mike E
  */
-
 @HBasePersistance(tableName = "TEST_MODEL", defaultColumnFamilyName = "STUFF")
 public class TestModelWithAbstractMap {
 
@@ -46,10 +45,10 @@ public class TestModelWithAbstractMap {
 
     @HBaseField
     private byte[] byteArrayField;
-    
+
     @HBaseField
     private ContentType contentTypeField;
-    
+
     @HBaseMapField
     private BadMap<String, String> badMap;
 
@@ -169,8 +168,8 @@ public class TestModelWithAbstractMap {
         this.badMap = badMap;
     }
 
-    private abstract class BadMap<K,V> implements Map<K, V> {
-        
+    private abstract class BadMap<K, V> implements Map<K, V> {
+
     }
-    
+
 }

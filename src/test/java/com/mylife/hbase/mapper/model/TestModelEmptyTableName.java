@@ -32,7 +32,6 @@ import com.mylife.hbase.mapper.annotation.HBaseRowKey;
  * 
  * @author Mike E
  */
-
 @HBasePersistance(tableName = "", defaultColumnFamilyName = "STUFF")
 public class TestModelEmptyTableName {
 
@@ -113,7 +112,8 @@ public class TestModelEmptyTableName {
         return notAMap;
     }
 
-    public TestModelEmptyTableName(Integer integerField, Short shortField, Double doubleField, Float floatField, Long longField,
+    public TestModelEmptyTableName(Integer integerField, Short shortField, Double doubleField, Float floatField,
+            Long longField,
             String stringField, Boolean booleanField, byte[] byteArrayField, ContentType contentTypeField) {
         super();
         this.integerField = integerField;

@@ -40,10 +40,8 @@ import com.mylife.hbase.mapper.model.TestModelWithOnlyObjectFields;
 /**
  * stand alone unit test for the type converter
  * 
- * 
  * @author Mike E
  */
-
 public class TypeHandlerUnitTest {
 
     private final static Long ONE = 1l;
@@ -73,7 +71,7 @@ public class TypeHandlerUnitTest {
                 TypeHandler.getTypedValue(ContentType.class, Bytes.toBytes(CONTENT_TYPE.toString())).toString());
         assertNull(TypeHandler.getTypedValue(null, null));
     }
-    
+
     @Test
     public void getTypeSupportTest() throws Exception {
         assertTrue(TypeHandler.supports(Long.class));
@@ -106,22 +104,24 @@ public class TypeHandlerUnitTest {
     public void getTypedValueUnsupportedType() throws Exception {
         TypeHandler.getTypedValue(BigDecimal.class, Bytes.toBytes(ONE));
     }
-    
+
     @Test
-    public void getGenericTypesFromFieldTest(){
-        Type[] types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelWithGoodHashMap.class, "goodMap"));
+    public void getGenericTypesFromFieldTest() {
+        Type[] types = TypeHandler.getGenericTypesFromField(Whitebox
+                .getField(TestModelWithGoodHashMap.class, "goodMap"));
         assertEquals(String.class, types[0]);
         assertEquals(String.class, types[1]);
-        
+
         types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelWithBadMap.class, "badMap"));
         assertEquals(Long.class, types[0]);
         assertEquals(Object.class, types[1]);
-        
+
         types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelExtraRowKeyMethod.class, "notAMap"));
         assertEquals(Long.class, types[0]);
-        
-        types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelWithOnlyObjectFields.class, "labeledPoint"));
+
+        types = TypeHandler.getGenericTypesFromField(Whitebox.getField(TestModelWithOnlyObjectFields.class,
+                "labeledPoint"));
         assertNull(types);
-        
+
     }
 }

@@ -1,3 +1,8 @@
+// =======================================================
+// Copyright Mylife.com Inc., 2013. All rights reserved.
+//
+// =======================================================
+
 package com.mylife.hbase.mapper.model;
 
 public class LabeledPoint {
@@ -36,8 +41,6 @@ public class LabeledPoint {
             return false;
         return true;
     }
-
-
 
     public String getLabel() {
         return label;

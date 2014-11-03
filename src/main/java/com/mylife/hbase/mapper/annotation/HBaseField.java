@@ -23,11 +23,17 @@ import java.lang.annotation.Target;
 
 /**
  * Marker annotation to show which fields should be put in HBase. Must have a corresponding getter.
- *
+ * 
  * @author Mike E.
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface HBaseField {
+
     String columnFamilyName() default "";
+
+    /*
+     * Flag that can be set for use with a coprocessor to determine if index should be created from this field.
+     */
+    boolean indexable() default false;
 }

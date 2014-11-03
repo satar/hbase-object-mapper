@@ -16,6 +16,8 @@
 
 package com.mylife.hbase.mapper;
 
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -31,10 +33,12 @@ import java.lang.annotation.ElementType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
 import java.util.TreeMap;
 
 import javax.mail.internet.ContentType;
@@ -80,7 +84,6 @@ import com.mylife.hbase.mapper.util.TypeHandler;
 /**
  * Unit testing for the core class HBaseEntityMapper
  * 
- * 
  * @author Mike E
  */
 @RunWith(PowerMockRunner.class)
@@ -120,7 +123,7 @@ public class HBaseEntityMapperUnitTest {
 
     private final TestModelWithOnlyObjectFields testModelWithOnlyObjectFieldsExpected = new TestModelWithOnlyObjectFields(
             labledPoint);
-    
+
     private final TestModelWithOnlyObjectFields testModelWithOnlyNullObjectFieldsExpected = new TestModelWithOnlyObjectFields(
             null);
 
@@ -154,6 +157,13 @@ public class HBaseEntityMapperUnitTest {
                 Whitebox.getMethod(TestModel.class, "getByteArrayField"));
         builder.put(Whitebox.getField(TestModel.class, "contentTypeField"),
                 Whitebox.getMethod(TestModel.class, "getContentTypeField"));
+        
+        builder.put(Whitebox.getField(TestModel.class, "indexableLongField"),
+                Whitebox.getMethod(TestModel.class, "getIndexableLongField"));
+        builder.put(Whitebox.getField(TestModel.class, "indexableStringField"),
+                Whitebox.getMethod(TestModel.class, "getIndexableStringField"));
+        builder.put(Whitebox.getField(TestModel.class, "indexableBooleanField"),
+                Whitebox.getMethod(TestModel.class, "getIndexableBooleanField"));
 
         testMap.put((Class<?>) TestModel.class, builder.build());
 
@@ -210,8 +220,10 @@ public class HBaseEntityMapperUnitTest {
         when(hBaseAdmin.getTableDescriptor((byte[]) any())).thenReturn(hTableDescriptor);
         when(hTableDescriptor.hasFamily((byte[]) any())).thenReturn(true);
         this.hBaseEntityMapper = new HBaseEntityMapper(hTablePool, "com.mylife.hbase.mapper.model");
-        // This setups the state of the entity mapper lets inspect that too make
-        // sure that the internal state of the entity mapper is correct.
+        /*
+         * This setups the state of the entity mapper lets inspect that to make
+         * sure that the internal state of the entity mapper is correct.
+         */
         ImmutableMap<Class<?>, ImmutableMap<Field, Method>> annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual = Whitebox
                 .getInternalState(hBaseEntityMapper,
                         "annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethod");
@@ -219,7 +231,7 @@ public class HBaseEntityMapperUnitTest {
         assertEquals(4, annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual.size());
         assertNotNull(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
                 .get((Class<?>) TestModel.class));
-        assertEquals(9,
+        assertEquals(12,
                 annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodActual
                         .get((Class<?>) TestModel.class).size());
         assertEquals(annotatedClassToAnnotatedFieldMappingWithCorrespondingGetterMethodExpected,
@@ -371,7 +383,7 @@ public class HBaseEntityMapperUnitTest {
                 hTableInterface);
         this.hBaseEntityMapper.save(testModelWithOnlyObjectFieldsExpected);
     }
-    
+
     @Test
     public void saveOnlyNullObjectFieldTest() throws Exception {
 
@@ -386,6 +398,24 @@ public class HBaseEntityMapperUnitTest {
         when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
                 hTableInterface);
         this.hBaseEntityMapper.save(testModelWithUnsupportedTypeAnnotated);
+    }
+
+    @Test
+    public void deleteTest() throws Exception {
+
+        when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
+                hTableInterface);
+        this.hBaseEntityMapper.deleteByRow(testModelExpected);
+    }
+
+    @Test
+    public void deleteAllTest() throws Exception {
+
+        when(hTablePool.getTable(TestModel.class.getAnnotation(HBasePersistance.class).tableName())).thenReturn(
+                hTableInterface);
+        Set<TestModel> entities = new HashSet<TestModel>();
+        entities.add(testModelExpected);
+        this.hBaseEntityMapper.delete(entities, TestModel.class);
     }
 
     @Test
@@ -584,6 +614,24 @@ public class HBaseEntityMapperUnitTest {
     @Test(expected = IllegalArgumentException.class)
     public void testToBytesException() throws Exception {
         Whitebox.invokeMethod(this.hBaseEntityMapper, "toBytes", labledPoint);
+    }
+
+    @Test
+    public void getIndexableFields() throws Exception {
+        final TestModel model = new TestModel(
+                -1,
+                (short) 0,
+                2.71828182845904523536028747135266249775724709369995,
+                3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940812848111745028410270193852110555964462294895493038196442881097566593344612847564823378678316527120190914564856692346F,
+                4L, "5", false, new byte[] { 6 }, (ContentType) Whitebox.getInternalState(TypeHandler.class,
+                        "DEFAULT_CONTENT_TYPE"));
+
+        model.setIndexableBooleanField(true);
+        model.setIndexableLongField(1L);
+        model.setIndexableStringField("INDEXABLE");
+        ImmutableMap<byte[], byte[]> indexableData = this.hBaseEntityMapper.getIndexableFields(model);
+        assertThat(indexableData, notNullValue());
+        assertThat(indexableData.size(), is(3));
     }
 
     private byte[] kyroOutput(Object object) throws Exception {
